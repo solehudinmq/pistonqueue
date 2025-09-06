@@ -75,10 +75,7 @@ module Pistonqueue
             if queue_data
               data = JSON.parse(queue_data[1])
               thread_pool.post do
-                thread_id = Thread.current.object_id
-                result = yield(data) # call service to process data from redis queue.
-
-                result
+                yield(data) # call service to process data from redis queue.
               end
             end
           end
