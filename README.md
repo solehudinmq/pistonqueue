@@ -42,6 +42,7 @@ save 60 10000 # Simpan jika ada 10000 perubahan dalam 60 detik (1 menit)
 appendonly yes
 appendfsync everysec # Sinkronisasi ke disk setiap detik
 # end of file /etc/redis/redis.conf
+ctrl + o 
 
 sudo systemctl restart redis-server
 ```
