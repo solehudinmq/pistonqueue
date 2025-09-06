@@ -1,0 +1,8 @@
+# Untuk RDB
+save 900 1    # Simpan jika ada 1 perubahan dalam 900 detik (15 menit)
+save 300 10   # Simpan jika ada 10 perubahan dalam 300 detik (5 menit)
+save 60 10000 # Simpan jika ada 10000 perubahan dalam 60 detik (1 menit)
+
+# Untuk AOF
+appendonly yes
+appendfsync everysec # Sinkronisasi ke disk setiap detik

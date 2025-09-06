@@ -28,6 +28,24 @@ cd your_ruby_application
 bundle install
 ```
 
+Make redis so that it can save on disk, in case the server dies or crashes :
+
+```bash
+sudo nano /etc/redis/redis.conf
+# Fill in /etc/redis/redis.conf as below :
+# Untuk RDB
+save 900 1    # Simpan jika ada 1 perubahan dalam 900 detik (15 menit)
+save 300 10   # Simpan jika ada 10 perubahan dalam 300 detik (5 menit)
+save 60 10000 # Simpan jika ada 10000 perubahan dalam 60 detik (1 menit)
+
+# Untuk AOF
+appendonly yes
+appendfsync everysec # Sinkronisasi ke disk setiap detik
+# end of file /etc/redis/redis.conf
+
+sudo systemctl restart redis-server
+```
+
 ## Usage
 
 To add consumer, you can add this code :
