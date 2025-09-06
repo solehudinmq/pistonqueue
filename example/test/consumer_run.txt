@@ -1,0 +1,21 @@
+How to make 'consumer.rb' run in systemd :
+1. cd /etc/systemd/system/
+2. sudo touch pistonqueue_consumer.service
+3. which bundler (bundler installation location)
+4. which ruby (ruby installation location)
+5. sudo nano pistonqueue_consumer.service
+6. copy the contents of 'pistonqueue_consumer.service.backup' into 'pistonqueue_consumer.service'
+7. Fill in the 'User' according to the username on your computer/server
+8. Fill in the W'orkingDirectory' according to the location of your project folder
+9. Fill in 'ExecStartPre' as obtained from 'which bundler', the format should be like this 'bundle install'
+10. Fill in 'ExecStart' as obtained from 'which bundler' and 'which ruby', the format should be like this 'bundle exec ruby consumer.rb'
+11. ctrl + o 
+12. sudo systemctl daemon-reload
+13. sudo systemctl start pistonqueue_consumer
+14. sudo systemctl enable pistonqueue_consumer
+
+How to see your service status in systemd :
+1. sudo systemctl status pistonqueue_consumer.service
+
+How to view your service logs in systemd :
+1. sudo journalctl -u pistonqueue_consumer.service -f

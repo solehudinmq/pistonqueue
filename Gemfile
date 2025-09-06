@@ -5,9 +5,20 @@ source "https://rubygems.org"
 # Specify your gem's dependencies in pistonqueue.gemspec
 gemspec
 
-gem "irb"
-gem "rake", "~> 13.0"
+gem "concurrent-ruby"
+gem "redis"
+gem "connection_pool"
 
-gem "rspec", "~> 3.0"
+group :development, :test do
+    gem "byebug"
+end
 
-gem "rubocop", "~> 1.21"
+group :development do
+    gem "irb"
+    gem "rake", "~> 13.0"
+    gem "rubocop", "~> 1.21"
+end
+
+group :test do
+    gem "rspec", "~> 3.0"
+end
