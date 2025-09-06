@@ -3,7 +3,6 @@ require 'sinatra'
 require 'json'
 require 'byebug'
 require 'pistonqueue'
-require_relative 'order'
 
 # Rute untuk menerima request dari aplikasi 3rdparty
 post '/sync' do

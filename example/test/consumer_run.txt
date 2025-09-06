@@ -19,3 +19,7 @@ How to see your service status in systemd :
 
 How to view your service logs in systemd :
 1. sudo journalctl -u pistonqueue_consumer.service -f
+
+How to restart the service :
+1. sudo systemctl daemon-reload
+2. sudo systemctl restart pistonqueue_consumer

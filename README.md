@@ -6,27 +6,139 @@ Pistonqueue utilizes a queue to receive every incoming request and maximizes the
 
 ## High Flow
 
+Potential problems if our application is unable to handle backpressure issues :
+![Logo Ruby](https://github.com/solehudinmq/pistonqueue/blob/development/high_flow/Pistonqueue-problem.jpg)
 
+With Pistonqueue, our application is now able to handle as many requests as possible :
+![Logo Ruby](https://github.com/solehudinmq/pistonqueue/blob/development/high_flow/Pistonqueue-solution.jpg)
 
 ## Installation
 
-TODO: Replace `UPDATE_WITH_YOUR_GEM_NAME_IMMEDIATELY_AFTER_RELEASE_TO_RUBYGEMS_ORG` with your gem name right after releasing it to RubyGems.org. Please do not do it earlier due to security reasons. Alternatively, replace this section with instructions to install your gem from git if you don't plan to release to RubyGems.org.
+The minimum version of Ruby that must be installed is 3.0.
+Need to install redis to implement queue.
 
-Install the gem and add to the application's Gemfile by executing:
+Add this line to your application's Gemfile :
 
-```bash
-bundle add UPDATE_WITH_YOUR_GEM_NAME_IMMEDIATELY_AFTER_RELEASE_TO_RUBYGEMS_ORG
+```ruby
+gem 'pistonqueue', git: 'git@github.com:solehudinmq/pistonqueue.git', branch: 'main'
 ```
-
-If bundler is not being used to manage dependencies, install the gem by executing:
-
+Open terminal, and run this : 
 ```bash
-gem install UPDATE_WITH_YOUR_GEM_NAME_IMMEDIATELY_AFTER_RELEASE_TO_RUBYGEMS_ORG
+cd your_ruby_application
+bundle install
 ```
 
 ## Usage
 
-TODO: Write usage instructions here
+To add a producer, you can add this code :
+
+```ruby
+require 'pistonqueue'
+
+Pistonqueue::Producer.add_to_queue(request_body)
+```
+
+Producer is a class for storing request body in a queue in redis. The following is an example of its application in controllers :
+
+```ruby
+# producer.rb
+require 'sinatra'
+require 'json'
+require 'pistonqueue'
+
+post '/sync' do
+    begin
+        request_body = JSON.parse(request.body.read)
+        Pistonqueue::Producer.add_to_queue(request_body)
+
+        content_type :json
+        { data: true }.to_json
+    rescue => e
+        content_type :json
+        status 500
+        return { error: e.message }.to_json
+    end
+end
+
+# bundle install
+# bundle exec ruby producer.rb
+```
+
+To add consumer, you can add this code :
+
+```ruby
+require 'pistonqueue'
+
+Pistonqueue::Consumer.run do |data|
+    # logic for processing or storing data from the Redis queue.
+end
+```
+
+Consumer is a class for retrieving and processing data from the redis queue. The following is an example code for consumer implementation :
+
+```ruby
+# consumer.rb
+require 'pistonqueue'
+
+require_relative 'order'
+
+class ConsumerService
+    def self.run
+        Pistonqueue::Consumer.run do |data|
+            puts "Data from redis queue : #{data}"
+            order = Order.new(user_id: data["user_id"], order_date: Date.today, total_amount: data["total_amount"])
+            order.save
+        end
+    end
+end
+
+ConsumerService.run
+```
+
+How to make 'consumer.rb' run in systemd :
+```bash
+cd /etc/systemd/system/
+sudo touch pistonqueue_consumer.service
+which bundler # bundler-installation-location
+which ruby # ruby-installation-location
+sudo nano pistonqueue_consumer.service
+# Fill in pistonqueue_consumer.service as below :
+[Unit]
+Description=Hybrid Ruby Worker Service
+After=network.target redis-server.service
+
+[Service]
+User=blackedet # your username on the server/computer
+WorkingDirectory=/home/blackedet/MyWorks/test3 # location of your project folder
+ExecStartPre=/home/blackedet/.local/share/mise/installs/ruby/3.4.5/bin/bundle install # <bundler-installation-location> install
+ExecStart=/home/blackedet/.local/share/mise/installs/ruby/3.4.5/bin/bundle exec /home/blackedet/.local/share/mise/installs/ruby/3.4.5/bin/ruby consumer.rb # <bundler-installation-location> <ruby-installation-location> consumer.rb
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
+# end of file pistonqueue_consumer.service
+ctrl + o 
+sudo systemctl daemon-reload
+sudo systemctl start pistonqueue_consumer
+sudo systemctl enable pistonqueue_consumer
+```
+
+How to see your service status in systemd :
+```bash
+sudo systemctl status pistonqueue_consumer.service
+```
+
+How to view your service logs in systemd :
+```bash
+sudo journalctl -u pistonqueue_consumer.service -f
+```
+
+How to restart the service :
+```bash
+sudo systemctl daemon-reload
+sudo systemctl restart pistonqueue_consumer
+```
 
 ## Development
 
@@ -36,7 +148,7 @@ To install this gem onto your local machine, run `bundle exec rake install`. To 
 
 ## Contributing
 
-Bug reports and pull requests are welcome on GitHub at https://github.com/[USERNAME]/pistonqueue.
+Bug reports and pull requests are welcome on GitHub at https://github.com/solehudinmq/pistonqueue.
 
 ## License
 
