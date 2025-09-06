@@ -30,40 +30,6 @@ bundle install
 
 ## Usage
 
-To add a producer, you can add this code :
-
-```ruby
-require 'pistonqueue'
-
-Pistonqueue::Producer.add_to_queue(request_body)
-```
-
-Producer is a class for storing request body in a queue in redis. The following is an example of its application in controllers :
-
-```ruby
-# producer.rb
-require 'sinatra'
-require 'json'
-require 'pistonqueue'
-
-post '/sync' do
-    begin
-        request_body = JSON.parse(request.body.read)
-        Pistonqueue::Producer.add_to_queue(request_body)
-
-        content_type :json
-        { data: true }.to_json
-    rescue => e
-        content_type :json
-        status 500
-        return { error: e.message }.to_json
-    end
-end
-
-# bundle install
-# bundle exec ruby producer.rb
-```
-
 To add consumer, you can add this code :
 
 ```ruby
@@ -110,6 +76,7 @@ After=network.target redis-server.service
 [Service]
 User=blackedet # your username on the server/computer
 WorkingDirectory=/home/blackedet/MyWorks/test3 # location of your project folder
+Environment="REDIS_URL=redis://localhost:6379" # env for redis url
 ExecStartPre=/home/blackedet/.local/share/mise/installs/ruby/3.4.5/bin/bundle install # <bundler-installation-location> install
 ExecStart=/home/blackedet/.local/share/mise/installs/ruby/3.4.5/bin/bundle exec /home/blackedet/.local/share/mise/installs/ruby/3.4.5/bin/ruby consumer.rb # <bundler-installation-location> <ruby-installation-location> consumer.rb
 Restart=always
@@ -138,6 +105,40 @@ How to restart the service :
 ```bash
 sudo systemctl daemon-reload
 sudo systemctl restart pistonqueue_consumer
+```
+
+To add a producer, you can add this code :
+
+```ruby
+require 'pistonqueue'
+
+Pistonqueue::Producer.add_to_queue(request_body)
+```
+
+Producer is a class for storing request body in a queue in redis. The following is an example of its application in controllers :
+
+```ruby
+# producer.rb
+require 'sinatra'
+require 'json'
+require 'pistonqueue'
+
+post '/sync' do
+    begin
+        request_body = JSON.parse(request.body.read)
+        Pistonqueue::Producer.add_to_queue(request_body)
+
+        content_type :json
+        { data: true }.to_json
+    rescue => e
+        content_type :json
+        status 500
+        return { error: e.message }.to_json
+    end
+end
+
+# bundle install
+# bundle exec ruby producer.rb
 ```
 
 ## Development

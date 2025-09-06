@@ -13,7 +13,7 @@ module Pistonqueue
 
   # queue name in Redis to store incoming requests.
   PISTON_QUEUE='PISTON_QUEUE'.freeze
-  REDIS_URL=(ENV['REDIS_URL'] || 'redis://127.0.0.1:6379').freeze
+  REDIS_URL=ENV['REDIS_URL'].freeze
   CONNECTION_TIMEOUT=5.freeze
   TOTAL_CPU_CORE=Concurrent.physical_processor_count.freeze
   TOTAL_THREAD_PRODUCER = ( (TOTAL_CPU_CORE * 2) + 1 ).freeze

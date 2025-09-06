@@ -34,3 +34,7 @@ end
 #     "user_id": 1,
 #     "total_amount": 30000
 # }'
+
+# How to check data in the queue :
+# redis-cli
+# LRANGE PISTON_QUEUE 0 -1

@@ -1,6 +1,9 @@
 # frozen_string_literal: true
 
-require "pistonqueue"
+require_relative './pistonqueue_test' # code duplicate from 'lib/pistonqueue.rb', specifically for testing
+
+require 'byebug'
+require_relative '../example/test/order'
 
 RSpec.configure do |config|
   # Enable flags like --only-failures and --next-failure
