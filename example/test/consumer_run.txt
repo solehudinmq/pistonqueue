@@ -23,8 +23,8 @@ WantedBy=multi-user.target
 # end of file pistonqueue_consumer.service
 6. ctrl + o 
 7. sudo systemctl daemon-reload
-8. sudo systemctl start pistonqueue_consumer
-9. sudo systemctl enable pistonqueue_consumer
+8. sudo systemctl start pistonqueue_consumer.service
+9. sudo systemctl enable pistonqueue_consumer.service
 
 How to see your service status in systemd :
 1. sudo systemctl status pistonqueue_consumer.service
@@ -34,4 +34,4 @@ How to view your service logs in systemd :
 
 How to restart the service :
 1. sudo systemctl daemon-reload
-2. sudo systemctl restart pistonqueue_consumer
+2. sudo systemctl restart pistonqueue_consumer.service
