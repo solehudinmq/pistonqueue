@@ -11,7 +11,7 @@ After=network.target redis-server.service
 
 [Service]
 User=blackedet # your username on the server/computer
-WorkingDirectory=/home/blackedet/MyWorks/test3 # location of your project folder
+WorkingDirectory=/home/blackedet/MyWorks/test # location of your project folder
 Environment="REDIS_URL=redis://localhost:6379" # env for redis url
 ExecStartPre=/home/blackedet/.local/share/mise/installs/ruby/3.4.5/bin/bundle install # <bundler-installation-location> install
 ExecStart=/home/blackedet/.local/share/mise/installs/ruby/3.4.5/bin/bundle exec /home/blackedet/.local/share/mise/installs/ruby/3.4.5/bin/ruby consumer.rb # <bundler-installation-location> <ruby-installation-location> consumer.rb
