@@ -88,7 +88,7 @@ which ruby # ruby-installation-location
 sudo nano pistonqueue_consumer.service
 # Fill in pistonqueue_consumer.service as below :
 [Unit]
-Description=Hybrid Ruby Worker Service
+Description=Ruby service to consume and process data from redis queue
 After=network.target redis-server.service
 
 [Service]
