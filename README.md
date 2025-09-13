@@ -141,8 +141,8 @@ After=network.target redis-server.service
 
 [Service]
 User=<your-server-username>
-WorkingDirectory=<consumer-file>
-Environment="REDIS_URL=redis://<username>:<password>@<host>:<port>/<db>."
+WorkingDirectory=<your-consumer-project-folder>
+Environment="REDIS_URL=redis://<username>:<password>@<host>:<port>/<db>"
 ExecStartPre=<bundler-installation-location> install
 ExecStart=<bundler-installation-location> <ruby-installation-location> consumer.rb
 Restart=always
