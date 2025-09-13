@@ -34,6 +34,24 @@ Make redis so that it can save on disk, in case the server dies or crashes :
 sudo nano /etc/redis/redis.conf
 # Fill in /etc/redis/redis.conf as below :
 # For RDB
+save <second> <total_data_change>
+save <second> <total_data_change>
+save <second> <total_data_change>
+
+# For AOF
+appendonly yes
+appendfsync everysec # Sync to disk every second
+# end of file /etc/redis/redis.conf
+
+sudo systemctl restart redis-server
+```
+
+Example : 
+
+```bash
+sudo nano /etc/redis/redis.conf
+# Fill in /etc/redis/redis.conf as below :
+# For RDB
 save 900 1    # Save if there is 1 change in 900 seconds (15 minutes)
 save 300 10   # Save if there are 10 changes in 300 seconds (5 minutes)
 save 60 10000 # Save if there are 10000 changes in 60 seconds (1 minute)
@@ -61,13 +79,43 @@ end
 Consumer is a class for retrieving and processing data from the redis queue. The following is an example code for consumer implementation :
 
 ```ruby
+# order.rb
+
+require 'sinatra'
+require 'active_record'
+
+ActiveRecord::Base.establish_connection(
+  adapter: 'sqlite3',
+  database: 'db/development.sqlite3'
+)
+
+Dir.mkdir('db') unless File.directory?('db')
+
+# Model
+class Order < ActiveRecord::Base
+end
+
+ActiveRecord::Schema.define do
+  unless ActiveRecord::Base.connection.table_exists?(:orders)
+    create_table :orders do |t|
+        t.integer :user_id
+        t.date :order_date
+        t.decimal :total_amount
+        t.string :status, default: :waiting
+        t.timestamps
+    end
+  end
+end
+```
+
+```ruby
 # consumer.rb
 require 'pistonqueue'
 
 require_relative 'order'
 
 class ConsumerService
-    def self.run
+    def self.pull
         Pistonqueue::Consumer.run do |data|
             puts "Data from redis queue : #{data}"
             order = Order.new(user_id: data["user_id"], order_date: Date.today, total_amount: data["total_amount"])
@@ -76,10 +124,57 @@ class ConsumerService
     end
 end
 
-ConsumerService.run
+ConsumerService.pull
 ```
 
 How to make 'consumer.rb' run in systemd :
+```bash
+cd /etc/systemd/system/
+sudo touch your_consumer.service
+which bundler # bundler-installation-location
+which ruby # ruby-installation-location
+sudo nano your_consumer.service
+# Fill in your_consumer.service as below :
+[Unit]
+Description=<service-description>
+After=network.target redis-server.service
+
+[Service]
+User=<your-server-username>
+WorkingDirectory=<consumer-file>
+Environment="REDIS_URL=redis://<username>:<password>@<host>:<port>/<db>."
+ExecStartPre=<bundler-installation-location> install
+ExecStart=<bundler-installation-location> <ruby-installation-location> consumer.rb
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
+# end of file pistonqueue_consumer.service
+
+sudo systemctl daemon-reload
+sudo systemctl start your_consumer.service
+sudo systemctl enable your_consumer.service
+```
+
+How to see your service status in systemd :
+```bash
+sudo systemctl status your_consumer.service
+```
+
+How to view your service logs in systemd :
+```bash
+sudo journalctl -u your_consumer.service -f
+```
+
+How to restart the service :
+```bash
+sudo systemctl daemon-reload
+sudo systemctl restart your_consumer.service
+```
+
+Example : 
+
 ```bash
 cd /etc/systemd/system/
 sudo touch pistonqueue_consumer.service
