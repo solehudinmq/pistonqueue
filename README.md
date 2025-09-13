@@ -150,7 +150,7 @@ RestartSec=3
 
 [Install]
 WantedBy=multi-user.target
-# end of file pistonqueue_consumer.service
+# end of file your_consumer.service
 
 sudo systemctl daemon-reload
 sudo systemctl start your_consumer.service
