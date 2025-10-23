@@ -133,6 +133,9 @@ cd /etc/systemd/system/
 sudo touch your_consumer.service
 which bundler # bundler-installation-location
 which ruby # ruby-installation-location
+
+sudo systemctl stop your_consumer.service
+
 sudo nano your_consumer.service
 # Fill in your_consumer.service as below :
 [Unit]
@@ -180,6 +183,9 @@ cd /etc/systemd/system/
 sudo touch pistonqueue_consumer.service
 which bundler # bundler-installation-location
 which ruby # ruby-installation-location
+
+sudo systemctl stop pistonqueue_consumer.service
+
 sudo nano pistonqueue_consumer.service
 # Fill in pistonqueue_consumer.service as below :
 [Unit]
@@ -188,10 +194,10 @@ After=network.target redis-server.service
 
 [Service]
 User=blackedet # your username on the server/computer
-WorkingDirectory=/home/blackedet/MyWorks/test # location of your project folder
+WorkingDirectory=/home/blackedet/MyWorks/pistonqueue/example # location of your project folder
 Environment="REDIS_URL=redis://localhost:6379" # env for redis url
 ExecStartPre=/home/blackedet/.local/share/mise/installs/ruby/3.4.5/bin/bundle install # <bundler-installation-location> install
-ExecStart=/home/blackedet/.local/share/mise/installs/ruby/3.4.5/bin/bundle exec /home/blackedet/.local/share/mise/installs/ruby/3.4.5/bin/ruby consumer.rb # <bundler-installation-location> <ruby-installation-location> consumer.rb
+ExecStart=/home/blackedet/.local/share/mise/installs/ruby/3.4.5/bin/bundle exec /home/blackedet/.local/share/mise/installs/ruby/3.4.5/bin/ruby consumer.rb # <bundler-installation-location> exec <ruby-installation-location> consumer.rb
 Restart=always
 RestartSec=3
 
@@ -253,12 +259,6 @@ end
 # bundle install
 # bundle exec ruby producer.rb
 ```
-
-## Development
-
-After checking out the repo, run `bin/setup` to install dependencies. Then, run `rake spec` to run the tests. You can also run `bin/console` for an interactive prompt that will allow you to experiment.
-
-To install this gem onto your local machine, run `bundle exec rake install`. To release a new version, update the version number in `version.rb`, and then run `bundle exec rake release`, which will create a git tag for the version, push git commits and the created tag, and push the `.gem` file to [rubygems.org](https://rubygems.org).
 
 ## Contributing
 
