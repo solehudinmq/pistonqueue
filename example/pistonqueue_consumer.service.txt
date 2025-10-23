@@ -5,7 +5,7 @@ After=network.target redis-server.service
 [Service]
 User=blackedet
 # Set WorkingDirectory agar systemd tahu di mana harus mencari Gemfile dan skrip
-WorkingDirectory=/home/blackedet/MyWorks/test3
+WorkingDirectory=/home/blackedet/MyWorks/pistonqueue/example
 Environment="REDIS_URL=redis://localhost:6379"
 # Gunakan bundle exec yang benar, dengan jalur lengkap ke executable
 ExecStartPre=/home/blackedet/.local/share/mise/installs/ruby/3.4.5/bin/bundle install
