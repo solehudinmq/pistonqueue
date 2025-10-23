@@ -8,9 +8,6 @@ require 'connection_pool'
 require 'json'
 
 module Pistonqueue
-  class Error < StandardError; end
-  # Your code goes here...
-
   # queue name in Redis to store incoming requests.
   PISTON_QUEUE='PISTON_QUEUE'.freeze
   REDIS_URL=ENV['REDIS_URL'].freeze
