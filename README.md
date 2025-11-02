@@ -76,37 +76,7 @@ Pistonqueue::Consumer.run do |data|
 end
 ```
 
-Consumer is a class for retrieving and processing data from the redis queue. The following is an example code for consumer implementation :
-
-```ruby
-# order.rb
-
-require 'sinatra'
-require 'active_record'
-
-ActiveRecord::Base.establish_connection(
-  adapter: 'sqlite3',
-  database: 'db/development.sqlite3'
-)
-
-Dir.mkdir('db') unless File.directory?('db')
-
-# Model
-class Order < ActiveRecord::Base
-end
-
-ActiveRecord::Schema.define do
-  unless ActiveRecord::Base.connection.table_exists?(:orders)
-    create_table :orders do |t|
-        t.integer :user_id
-        t.date :order_date
-        t.decimal :total_amount
-        t.string :status, default: :waiting
-        t.timestamps
-    end
-  end
-end
-```
+Example :
 
 ```ruby
 # consumer.rb
@@ -234,7 +204,7 @@ require 'pistonqueue'
 Pistonqueue::Producer.add_to_queue(request_body)
 ```
 
-Producer is a class for storing request body in a queue in redis. The following is an example of its application in controllers :
+Example :
 
 ```ruby
 # producer.rb
@@ -243,21 +213,154 @@ require 'json'
 require 'pistonqueue'
 
 post '/sync' do
-    begin
-        request_body = JSON.parse(request.body.read)
-        Pistonqueue::Producer.add_to_queue(request_body)
+  begin
+    request_body = JSON.parse(request.body.read)
+    Pistonqueue::Producer.add_to_queue(request_body)
 
-        content_type :json
-        { data: true }.to_json
-    rescue => e
-        content_type :json
-        status 500
-        return { error: e.message }.to_json
+    content_type :json
+    { data: true }.to_json
+  rescue => e
+    content_type :json
+    status 500
+    return { error: e.message }.to_json
+  end
+end
+```
+
+And here is an example of implementation in your application :
+```ruby
+# Gemfile
+# frozen_string_literal: true
+
+source "https://rubygems.org"
+
+gem "concurrent-ruby"
+gem "redis"
+gem "connection_pool"
+gem "byebug"
+gem "sinatra"
+gem "activerecord"
+gem "sqlite3"
+gem 'pistonqueue', git: 'git@github.com:solehudinmq/pistonqueue.git', branch: 'main'
+gem "rackup", "~> 2.2"
+gem "puma", "~> 7.0"
+```
+
+```ruby
+# order.rb
+
+require 'sinatra'
+require 'active_record'
+
+ActiveRecord::Base.establish_connection(
+  adapter: 'sqlite3',
+  database: 'db/development.sqlite3'
+)
+
+Dir.mkdir('db') unless File.directory?('db')
+
+class Order < ActiveRecord::Base
+end
+
+ActiveRecord::Schema.define do
+  unless ActiveRecord::Base.connection.table_exists?(:orders)
+    create_table :orders do |t|
+        t.integer :user_id
+        t.date :order_date
+        t.decimal :total_amount
+        t.string :status, default: :waiting
+        t.timestamps
+    end
+  end
+end
+```
+
+```ruby
+# consumer.rb
+
+require 'pistonqueue'
+
+require_relative 'order'
+
+class ConsumerService
+    def self.run
+        Pistonqueue::Consumer.run do |data|
+            puts "Data from redis queue : #{data}"
+            order = Order.new(user_id: data["user_id"], order_date: Date.today, total_amount: data["total_amount"])
+            order.save
+        end
     end
 end
 
-# bundle install
-# bundle exec ruby producer.rb
+ConsumerService.run
+
+# To run a consumer in systemd, you can follow the steps in 'example/consumer_run.txt'
+```
+
+```ruby
+# app.rb
+
+require 'sinatra'
+require 'json'
+require 'byebug'
+require 'pistonqueue'
+
+require_relative 'order'
+
+before do
+  content_type :json
+end
+
+# Rute untuk menerima request dari aplikasi 3rdparty
+post '/sync' do
+  begin
+    request_body = JSON.parse(request.body.read)
+
+    # save request data to redis queue
+    Pistonqueue::Producer.add_to_queue(request_body)
+
+    { data: true }.to_json
+  rescue => e
+    status 500
+    return { error: e.message }.to_json
+  end
+end
+
+# get data orders
+get '/orders' do
+  begin
+    orders = Order.all
+
+    { count: orders.size, orders: orders }.to_json
+  rescue => e
+    status 500
+    return { error: e.message }.to_json
+  end
+end
+
+# note :
+# - make sure redis is installed 
+# - to make redis save data to disk periodically, follow the steps here 'example/redis_disk.txt'
+# - make sure 'consumer.rb' is running in the background (using systemd) before running app.rb, you can follow the steps in 'example/consumer_run.txt'
+
+# ====== run producer ======
+# 1. open terminal
+# 2. cd your_project
+# 3. bundle install
+# 4. bundle exec ruby app.rb
+# 5. create data order
+# curl --location 'http://localhost:4567/sync' \
+# --header 'Content-Type: application/json' \
+# --data '{
+#     "user_id": 1,
+#     "total_amount": 20000
+# }'
+# 6. get data order
+# curl --location 'http://localhost:4567/orders'
+
+# How to check data in the queue :
+# redis-cli
+# LRANGE PISTON_QUEUE 0 -1
 ```
 
 ## Contributing

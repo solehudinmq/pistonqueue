@@ -15,7 +15,7 @@ Dir.mkdir('db') unless File.directory?('db')
 class Order < ActiveRecord::Base
 end
 
-# Migrasi untuk membuat tabel posts
+# Migrasi untuk membuat tabel orders
 ActiveRecord::Schema.define do
   unless ActiveRecord::Base.connection.table_exists?(:orders)
     create_table :orders do |t|
