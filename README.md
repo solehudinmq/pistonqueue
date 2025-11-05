@@ -61,7 +61,7 @@ appendfsync everysec # Sync to disk every second
 sudo systemctl restart redis-server
 ```
 
-For more details, you can see the following example : [example/redis_disk.txt](here).
+For more details, you can see the following example : [example/redis_disk.txt](https://github.com/solehudinmq/pistonqueue/blob/development/example/redis_disk.txt).
 
 ## Usage
 
@@ -77,7 +77,7 @@ Pistonqueue::Consumer.run do |data|
 end
 ```
 
-For more details, you can see the following example : [example/consumer.rb](here).
+For more details, you can see the following example : [example/consumer.rb](https://github.com/solehudinmq/pistonqueue/blob/development/example/consumer.rb).
 
 How to make 'consumer.rb' run in systemd :
 
@@ -131,13 +131,13 @@ sudo systemctl restart your_consumer.service
 
 For more details, you can see the following example : 
 
-- Run consumer in systemd : [example/run_consumer_in_systemd.txt](Here).
+- Run consumer in systemd : [example/run_consumer_in_systemd.txt](https://github.com/solehudinmq/pistonqueue/blob/development/example/run_consumer_in_systemd.txt).
 
-- Consumer status in systemd : [example/consumer_status.txt](Here).
+- Consumer status in systemd : [example/consumer_status.txt](https://github.com/solehudinmq/pistonqueue/blob/development/example/consumer_status.txt).
 
-- Consumer logs in systemd : [example/consumer_logs.txt](Here).
+- Consumer logs in systemd : [example/consumer_logs.txt](https://github.com/solehudinmq/pistonqueue/blob/development/example/consumer_logs.txt).
 
-- Consumer restart in systemd : [example/consumer_restart.txt](Here).
+- Consumer restart in systemd : [example/consumer_restart.txt](https://github.com/solehudinmq/pistonqueue/blob/development/example/consumer_restart.txt).
 
 ### Producer
 
@@ -149,11 +149,11 @@ require 'pistonqueue'
 Pistonqueue::Producer.add_to_queue(request_body)
 ```
 
-For more details, you can see the following example : [example/app.rb](here).
+For more details, you can see the following example : [example/app.rb](https://github.com/solehudinmq/pistonqueue/blob/development/example/app.rb).
 
 ## Example Implementation in Your Application
 
-For examples of applications that use this gem, you can see them here : [example](Here).
+For examples of applications that use this gem, you can see them here : [example](https://github.com/solehudinmq/pistonqueue/tree/development/example).
 
 ## Contributing
 
