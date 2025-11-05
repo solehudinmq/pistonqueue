@@ -1,20 +1,21 @@
-GIT
-  remote: git@github.com:solehudinmq/pistonqueue.git
-  revision: f9d089a88542b6251c70ee8ccf5d836919f64f42
-  branch: main
+PATH
+  remote: ..
   specs:
     pistonqueue (0.1.0)
+      concurrent-ruby (~> 1.1)
+      connection_pool (~> 2.4)
+      redis (~> 5.0)
 
 GEM
   remote: https://rubygems.org/
   specs:
-    activemodel (8.1.0)
-      activesupport (= 8.1.0)
-    activerecord (8.1.0)
-      activemodel (= 8.1.0)
-      activesupport (= 8.1.0)
+    activemodel (8.1.1)
+      activesupport (= 8.1.1)
+    activerecord (8.1.1)
+      activemodel (= 8.1.1)
+      activesupport (= 8.1.1)
       timeout (>= 0.4.0)
-    activesupport (8.1.0)
+    activesupport (8.1.1)
       base64
       bigdecimal
       concurrent-ruby (~> 1.0, >= 1.3.1)
@@ -35,15 +36,15 @@ GEM
     drb (2.2.3)
     i18n (1.14.7)
       concurrent-ruby (~> 1.0)
-    json (2.15.1)
+    json (2.15.2)
     logger (1.7.0)
     minitest (5.26.0)
     mustermann (3.0.4)
       ruby2_keywords (~> 0.0.1)
-    nio4r (2.7.4)
+    nio4r (2.7.5)
     puma (7.1.0)
       nio4r (~> 2.0)
-    rack (3.2.3)
+    rack (3.2.4)
     rack-protection (4.2.1)
       base64 (>= 0.1.0)
       logger (>= 1.6.0)
@@ -77,10 +78,10 @@ GEM
     sqlite3 (2.7.4-x86_64-linux-gnu)
     sqlite3 (2.7.4-x86_64-linux-musl)
     tilt (2.6.1)
-    timeout (0.4.3)
+    timeout (0.4.4)
     tzinfo (2.0.6)
       concurrent-ruby (~> 1.0)
-    uri (1.0.4)
+    uri (1.1.1)
 
 PLATFORMS
   aarch64-linux-gnu
@@ -97,12 +98,9 @@ PLATFORMS
 DEPENDENCIES
   activerecord
   byebug
-  concurrent-ruby
-  connection_pool
   pistonqueue!
   puma (~> 7.0)
   rackup (~> 2.2)
-  redis
   sinatra
   sqlite3
 

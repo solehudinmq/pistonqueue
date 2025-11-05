@@ -15,4 +15,20 @@ RSpec.configure do |config|
   config.expect_with :rspec do |c|
     c.syntax = :expect
   end
+
+  config.before(:suite) do
+    # 'spawn' menjalankan perintah di background dan MENGEMBALIKAN PID
+    @redis_pid = spawn("redis-server --port 6380 --daemonize yes", out: '/dev/null', err: '/dev/null')
+    sleep 1 # Beri waktu startup
+  end
+
+  config.after(:suite) do
+    if @redis_pid
+      # Mengirim sinyal TERMINATE (TERM) ke proses Redis menggunakan PID
+      Process.kill('TERM', @redis_pid)
+      
+      # Menunggu proses benar-benar mati (optional, tapi disarankan)
+      Process.wait(@redis_pid) rescue nil 
+    end
+  end
 end

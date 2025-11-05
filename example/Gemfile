@@ -4,14 +4,11 @@ source "https://rubygems.org"
 
 # gem "rails"
 
-gem "concurrent-ruby"
-gem "redis"
-gem "connection_pool"
 gem "byebug"
 gem "sinatra"
 gem "activerecord"
 gem "sqlite3"
-# gem 'pistonqueue', path: '../pistonqueue' # for test in localhost
-gem 'pistonqueue', git: 'git@github.com:solehudinmq/pistonqueue.git', branch: 'main'
+gem 'pistonqueue', path: '../' # for test in localhost
+# gem 'pistonqueue', git: 'git@github.com:solehudinmq/pistonqueue.git', branch: 'main'
 gem "rackup", "~> 2.2"
 gem "puma", "~> 7.0"

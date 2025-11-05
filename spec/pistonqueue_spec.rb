@@ -1,9 +1,5 @@
 # frozen_string_literal: true
 
-# run this :
-# - redis-server --port 6380
-# - rspec
-# make sure redis is running on another port, for example port 6380.
 RSpec.describe PistonqueueTest do
   before(:all) do
     # Delete old data and enter new data
