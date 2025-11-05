@@ -149,6 +149,16 @@ require 'pistonqueue'
 Pistonqueue::Producer.add_to_queue(request_body)
 ```
 
+Parameter description :
+- request_body : data in hash form that will be sent to the Redis queue. Example : 
+
+```json
+{
+  "user_id": 1,
+  "total_amount": 20000
+}
+```
+
 For more details, you can see the following example : [example/app.rb](https://github.com/solehudinmq/pistonqueue/blob/development/example/app.rb).
 
 ## Example Implementation in Your Application
