@@ -54,15 +54,6 @@ module Pistonqueue
             Redis.new(url: REDIS_URL)
           end
 
-          # create threadpool.
-          thread_pool ||= Concurrent::ThreadPoolExecutor.new(
-            min_threads: 1,
-            max_threads: TOTAL_THREAD_CONSUMER,
-            idletime: 60, # the time (in seconds) that a thread in the thread pool will remain active without processing a task.
-            max_queue: -1, # there is no queue limit, all tasks will be accepted and processed.
-            fallback_policy: :abort 
-          )
-
           loop do
             # fetch data from redis queue.
             queue_data = redis_pool.with do |redis_conn|
@@ -71,7 +62,8 @@ module Pistonqueue
             
             if queue_data
               data = JSON.parse(queue_data[1])
-              thread_pool.post do
+
+              fork do
                 yield(data) # call service to process data from redis queue.
               end
             end
