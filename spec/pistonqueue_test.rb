@@ -38,21 +38,20 @@ module PistonqueueTest
   end
 
   class Consumer
-    def self.run
+    def self.run(&service_block)
       worker_pids = []
       
       TOTAL_CPU_CORE.times do |cpu_number|
         pid = fork do
-          redis_pool ||= ConnectionPool.new(size: TOTAL_THREAD_CONSUMER, timeout: CONNECTION_TIMEOUT) do
+          pool_size = TOTAL_THREAD_CONSUMER + 2
+
+          redis_pool = ConnectionPool.new(size: pool_size, timeout: CONNECTION_TIMEOUT) do
             Redis.new(url: REDIS_URL)
           end
 
-          thread_pool ||= Concurrent::ThreadPoolExecutor.new(
-            min_threads: 1,
-            max_threads: TOTAL_THREAD_CONSUMER,
-            idletime: 60, 
-            max_queue: -1, 
-            fallback_policy: :abort 
+          thread_pool = Concurrent::FixedThreadPool.new(
+            pool_size, 
+            max_queue: 1000
           )
 
           queue_data = redis_pool.with do |redis_conn|
@@ -65,7 +64,14 @@ module PistonqueueTest
 
             thread_pool.post do
               begin
-                yield(data)
+                # Penggunaan Thread.current.object_id membantu debugging thread
+                puts "[PID: #{Process.pid} | T_ID: #{Thread.current.object_id}] Processing data..."
+                
+                # Panggil service melalui block yang disimpan
+                service_block.call(data) if service_block
+              rescue => e
+                # Pastikan Anda punya mekanisme retry/dead-letter queue di sini
+                puts "[ERROR in Worker Thread] PID #{Process.pid}: #{e.message}"
               ensure
                 latch.count_down
               end
@@ -73,6 +79,9 @@ module PistonqueueTest
 
             latch.wait
           end
+
+          thread_pool.shutdown
+          thread_pool.wait_for_termination(10)
         end
 
         worker_pids << pid

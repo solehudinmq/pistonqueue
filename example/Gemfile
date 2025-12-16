@@ -9,7 +9,7 @@ gem "sinatra"
 gem "activerecord"
 gem "sqlite3"
 gem "httparty"
-# gem 'pistonqueue', path: '../' # for test in localhost
-gem 'pistonqueue', git: 'git@github.com:solehudinmq/pistonqueue.git', branch: 'main'
+gem 'pistonqueue', path: '../' # for test in localhost
+# gem 'pistonqueue', git: 'git@github.com:solehudinmq/pistonqueue.git', branch: 'main'
 gem "rackup", "~> 2.2"
 gem "puma", "~> 7.0"

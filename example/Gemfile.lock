@@ -1,7 +1,5 @@
-GIT
-  remote: git@github.com:solehudinmq/pistonqueue.git
-  revision: b12a5cd8be97751d1c66a242c289477a6b05a07e
-  branch: main
+PATH
+  remote: ..
   specs:
     pistonqueue (0.1.0)
       concurrent-ruby (~> 1.1)

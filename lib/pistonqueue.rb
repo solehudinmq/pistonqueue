@@ -15,7 +15,6 @@ module Pistonqueue
   TOTAL_CPU_CORE=Concurrent.physical_processor_count.freeze
   TOTAL_THREAD_PRODUCER = ( (TOTAL_CPU_CORE * 2) + 1 ).freeze
   TOTAL_THREAD_CONSUMER = ( ((TOTAL_CPU_CORE * 2) + 1) / TOTAL_CPU_CORE ).freeze
-  POOL_SIZE = ((ENV['POOL_SIZE'] || 10).to_i + 2).freeze
 
   # producer is used to store incoming requests from the controller.
   class Producer
@@ -50,14 +49,16 @@ module Pistonqueue
       # create child processes according to the number of available CPU cores.
       TOTAL_CPU_CORE.times do |cpu_number|
         pid = fork do
+          pool_size = TOTAL_THREAD_CONSUMER + 2
+
           # create a redis connection pool.
-          redis_pool = ConnectionPool.new(size: POOL_SIZE, timeout: CONNECTION_TIMEOUT) do
+          redis_pool = ConnectionPool.new(size: pool_size, timeout: CONNECTION_TIMEOUT) do
             Redis.new(url: REDIS_URL)
           end
 
           # threadpool set
           thread_pool = Concurrent::FixedThreadPool.new(
-            TOTAL_THREAD_CONSUMER, 
+            pool_size, 
             max_queue: 1000
           )
 
