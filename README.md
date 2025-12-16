@@ -99,6 +99,7 @@ After=network.target redis-server.service
 User=<your-server-username>
 WorkingDirectory=<your-consumer-project-folder>
 Environment="REDIS_URL=redis://<username>:<password>@<host>:<port>/<db>"
+Environment="POOL_SIZE=<pool-size>"
 ExecStartPre=<bundler-installation-location> install
 ExecStart=<bundler-installation-location> <ruby-installation-location> consumer.rb
 Restart=always
@@ -160,6 +161,10 @@ Parameter description :
 ```
 
 For more details, you can see the following example : [example/app.rb](https://github.com/solehudinmq/pistonqueue/blob/development/example/app.rb).
+
+## How to do bulk insert
+
+For more details, you can see the following example : [example/test.rb]()
 
 ## Example Implementation in Your Application
 

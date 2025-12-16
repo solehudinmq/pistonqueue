@@ -15,6 +15,7 @@ module Pistonqueue
   TOTAL_CPU_CORE=Concurrent.physical_processor_count.freeze
   TOTAL_THREAD_PRODUCER = ( (TOTAL_CPU_CORE * 2) + 1 ).freeze
   TOTAL_THREAD_CONSUMER = ( ((TOTAL_CPU_CORE * 2) + 1) / TOTAL_CPU_CORE ).freeze
+  POOL_SIZE = ((ENV['POOL_SIZE'] || 10).to_i + 2).freeze
 
   # producer is used to store incoming requests from the controller.
   class Producer
@@ -43,16 +44,22 @@ module Pistonqueue
   # consumer is called in a background job, it is recommended to use systemd.
   class Consumer
     # take requests from the redis queue, and execute them in parallel and concurrently.
-    def self.run
+    def self.run(&service_block)
       worker_pids = []
-      
+
       # create child processes according to the number of available CPU cores.
       TOTAL_CPU_CORE.times do |cpu_number|
         pid = fork do
           # create a redis connection pool.
-          redis_pool ||= ConnectionPool.new(size: TOTAL_THREAD_CONSUMER, timeout: CONNECTION_TIMEOUT) do
+          redis_pool = ConnectionPool.new(size: POOL_SIZE, timeout: CONNECTION_TIMEOUT) do
             Redis.new(url: REDIS_URL)
           end
+
+          # threadpool set
+          thread_pool = Concurrent::FixedThreadPool.new(
+            TOTAL_THREAD_CONSUMER, 
+            max_queue: 1000
+          )
 
           loop do
             # fetch data from redis queue.
@@ -63,11 +70,23 @@ module Pistonqueue
             if queue_data
               data = JSON.parse(queue_data[1])
 
-              fork do
-                yield(data) # call service to process data from redis queue.
+              thread_pool.post do
+                begin
+                  # Penggunaan Thread.current.object_id membantu debugging thread
+                  puts "[PID: #{Process.pid} | T_ID: #{Thread.current.object_id}] Processing data..."
+                  
+                  # Panggil service melalui block yang disimpan
+                  service_block.call(data) if service_block
+                rescue => e
+                  # Pastikan Anda punya mekanisme retry/dead-letter queue di sini
+                  puts "[ERROR in Worker Thread] PID #{Process.pid}: #{e.message}"
+                end
               end
             end
           end
+
+          thread_pool.shutdown
+          thread_pool.wait_for_termination(10)
         end
 
         worker_pids << pid
