@@ -162,7 +162,7 @@ Parameter description :
 
 For more details, you can see the following example : [example/app.rb](https://github.com/solehudinmq/pistonqueue/blob/development/example/app.rb).
 
-## How to do bulk insert
+## How to do Bulk Insert
 
 For more details, you can see the following example : [example/test.rb](https://github.com/solehudinmq/pistonqueue/blob/development/example/test.rb)
 
