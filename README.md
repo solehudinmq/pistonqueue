@@ -164,7 +164,7 @@ For more details, you can see the following example : [example/app.rb](https://g
 
 ## How to do bulk insert
 
-For more details, you can see the following example : [example/test.rb]()
+For more details, you can see the following example : [example/test.rb](https://github.com/solehudinmq/pistonqueue/blob/development/example/test.rb)
 
 ## Example Implementation in Your Application
 
