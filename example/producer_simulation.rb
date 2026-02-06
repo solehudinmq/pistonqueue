@@ -8,7 +8,7 @@ puts "🚀 Starting Producer Simulation..."
 Async do |task|
   internet = Async::HTTP::Internet.new
   url = "http://localhost:4567/publish"
-  headers = [['content-type', 'application/json']]
+  headers = [['content-type', 'application/json'], ['x_topic', 'topic_io_light']]
   
   semaphore = Async::Semaphore.new(100)
   barrier = Async::Barrier.new
