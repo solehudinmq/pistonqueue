@@ -4,56 +4,33 @@ require 'json'
 require 'byebug'
 require 'pistonqueue'
 
-require_relative 'order'
+require_relative 'models/order'
 
 before do
   content_type :json
 end
 
-# Rute untuk menerima request dari aplikasi 3rdparty
-post '/sync' do
-  begin
-    request_body = JSON.parse(request.body.read)
+# route to receive requests from 3rdparty applications.
+post '/publish' do
+  status 201
 
-    # save request data to redis queue
-    Pistonqueue::Producer.add_to_queue(request_body)
+  # request body example : { order_id: 'xyz-1', total_payment: 250000 }.
+  request_body = JSON.parse(request.body.read)
 
-    { data: true }.to_json
-  rescue => e
-    status 500
-    return { error: e.message }.to_json
-  end
+  # save request data to redis stream
+  producer = ::Pistonqueue::Producer.new(driver: :redis_stream)
+  result = producer.publish(topic: 'topic_io', data: request_body)
+
+  { message_id: result, is_success: result ? true : false }.to_json
 end
 
-# get data orders
-get '/orders' do
-  begin
-    orders = Order.all
-
-    { count: orders.size, orders: orders }.to_json
-  rescue => e
-    status 500
-    return { error: e.message }.to_json
-  end
+error do
+  status 500
+  { error: env['sinatra.error'].message }.to_json
 end
 
-# note : make sure consumer.rb is running in the background (using systemd) before running app.rb
-
-# ====== run producer ======
-# 1. open terminal
-# 2. cd your_project
-# 3. bundle install
-# 4. bundle exec ruby app.rb
-# 5. create data order
-# curl --location 'http://localhost:4567/sync' \
-# --header 'Content-Type: application/json' \
-# --data '{
-#     "user_id": 1,
-#     "total_amount": 30000
-# }'
-# 6. get data order
-# curl --location 'http://localhost:4567/orders'
-
-# How to check data in the queue :
-# redis-cli
-# LRANGE PISTON_QUEUE 0 -1
+# run this command :
+# - open terminal
+# - cd example
+# - bundle install
+# - bundle exec ruby app.rb

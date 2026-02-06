@@ -1,7 +1,6 @@
 require 'redis'
 require 'async'
 require 'async/semaphore'
-require 'byebug'
 
 require_relative '../abstract_driver'
 require_relative '../utils/logging'
@@ -144,5 +143,11 @@ module Pistonqueue
           failed_at: Time.now.to_s
         })
       end
+  end
+
+  class RetryRedisStream < ::Pistonqueue::RedisStream
+    def consume(topic:, fiber_limit:, options: {}, service_block:)
+      
+    end
   end
 end

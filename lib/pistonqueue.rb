@@ -1,17 +1,17 @@
 # frozen_string_literal: true
 
 require_relative "pistonqueue/version"
+require_relative "pistonqueue/utils/driver"
 
 module Pistonqueue
   class Producer
     # method description : driver initialization.
     # parameters :
-    # - driver : selected producer mechanism.
+    # - driver : selected producer mechanism, for example : :redis_stream.
     # how to use :
-    #   driver = Pistonqueue::RedisStream.new
-    #   producer = Pistonqueue::Producer.new(driver: driver)
+    #   producer = Pistonqueue::Producer.new(driver: :redis_stream)
     def initialize(driver:)
-      @driver = driver
+      @driver = Pistonqueue::Driver.init_driver(driver: driver)
     end
 
     # method description : send data to the 'topic'.
@@ -35,12 +35,11 @@ module Pistonqueue
 
     # method description : driver initialization.
     # parameters :
-    # - driver : selected consumer mechanism.
+    # - driver : selected consumer mechanism, for example : :redis_stream.
     # how to use :
-    #   driver = Pistonqueue::RedisStream.new
-    #   consumer = Pistonqueue::Consumer.new(driver: driver)
+    #   consumer = Pistonqueue::Consumer.new(driver: :redis_stream)
     def initialize(driver:)
-      @driver = driver
+      @driver = Pistonqueue::Driver.init_driver(driver: driver)
     end
 
     # method description : receive data from topics, and process it with concurrency based on task type.

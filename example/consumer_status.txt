@@ -1,1 +1,0 @@
-sudo systemctl status pistonqueue_consumer.service

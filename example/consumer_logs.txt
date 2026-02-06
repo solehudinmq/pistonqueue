@@ -1,1 +1,0 @@
-sudo journalctl -u pistonqueue_consumer.service -f
