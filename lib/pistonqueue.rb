@@ -2,107 +2,68 @@
 
 require_relative "pistonqueue/version"
 
-require 'redis'
-require 'concurrent'
-require 'connection_pool'
-require 'json'
-
 module Pistonqueue
-  # queue name in Redis to store incoming requests.
-  PISTON_QUEUE='PISTON_QUEUE'.freeze
-  REDIS_URL=ENV['REDIS_URL'].freeze
-  CONNECTION_TIMEOUT=5.freeze
-  TOTAL_CPU_CORE=Concurrent.physical_processor_count.freeze
-  TOTAL_THREAD_PRODUCER = ( (TOTAL_CPU_CORE * 2) + 1 ).freeze
-  TOTAL_THREAD_CONSUMER = ( ((TOTAL_CPU_CORE * 2) + 1) / TOTAL_CPU_CORE ).freeze
-
-  # producer is used to store incoming requests from the controller.
   class Producer
-    # stores incoming requests in the Redis queue.
-    def self.add_to_queue(request_data)
-      begin
-        raise 'Request data must be in hash.' unless request_data.is_a?(Hash)
+    # method description : driver initialization.
+    # parameters :
+    # - driver : selected producer mechanism.
+    # how to use :
+    #   driver = Pistonqueue::RedisStream.new
+    #   producer = Pistonqueue::Producer.new(driver: driver)
+    def initialize(driver:)
+      @driver = driver
+    end
 
-        # create a redis connection pool.
-        @redis_pool ||= ConnectionPool.new(size: TOTAL_THREAD_PRODUCER, timeout: CONNECTION_TIMEOUT) do
-          Redis.new(url: REDIS_URL)
-        end
-        
-        # save requests to queue in redis.
-        @redis_pool.with do |redis_conn|
-          redis_conn.lpush(PISTON_QUEUE, request_data.to_json)
-        end
-
-        true
-      rescue => e
-        false
-      end
+    # method description : send data to the 'topic'.
+    # parameters :
+    # - topic : target 'topic' to be sent.
+    # - data : data object that will be sent to the topic.
+    # how to use :
+    #   producer.publish(topic: 'topic_io', data: { order_id: 'xyz-1', total_payment: 250000 })
+    def publish(topic:, data:)
+      @driver.produce(topic: topic, data: data)
     end
   end
 
-  # consumer is called in a background job, it is recommended to use systemd.
   class Consumer
-    # take requests from the redis queue, and execute them in parallel and concurrently.
-    def self.run(&service_block)
-      worker_pids = []
+    FIBER_PROFILE = { 
+      :io_bound_light => (ENV['IO_LIGHT_FIBER'] || 500).to_i, # suitable for the task : cache / logging.
+      :io_bound_medium => (ENV['IO_MEDIUM_FIBER'] || 100).to_i, # suitable for the task : api call / query database.
+      :io_bound_heavy => (ENV['IO_HEAVY_FIBER'] || 10).to_i, # suitable for the task : upload file / web scraping.
+      :cpu_bound => (ENV['CPU_FIBER'] || 1).to_i # suitable for the task : encryption / compression / image processing.
+    }.freeze
 
-      # create child processes according to the number of available CPU cores.
-      TOTAL_CPU_CORE.times do |cpu_number|
-        pid = fork do
-          pool_size = TOTAL_THREAD_CONSUMER + 2
-
-          # create a redis connection pool.
-          redis_pool = ConnectionPool.new(size: pool_size, timeout: CONNECTION_TIMEOUT) do
-            Redis.new(url: REDIS_URL)
-          end
-
-          # threadpool set
-          thread_pool = Concurrent::FixedThreadPool.new(
-            pool_size, 
-            max_queue: 1000
-          )
-
-          loop do
-            # fetch data from redis queue.
-            queue_data = redis_pool.with do |redis_conn|
-              redis_conn.brpop(PISTON_QUEUE, timeout: CONNECTION_TIMEOUT)
-            end
-            
-            if queue_data
-              data = JSON.parse(queue_data[1])
-
-              thread_pool.post do
-                begin
-                  # Penggunaan Thread.current.object_id membantu debugging thread
-                  puts "[PID: #{Process.pid} | T_ID: #{Thread.current.object_id}] Processing data..."
-                  
-                  # Panggil service melalui block yang disimpan
-                  service_block.call(data) if service_block
-                rescue => e
-                  # Pastikan Anda punya mekanisme retry/dead-letter queue di sini
-                  puts "[ERROR in Worker Thread] PID #{Process.pid}: #{e.message}"
-                end
-              end
-            end
-          end
-
-          thread_pool.shutdown
-          thread_pool.wait_for_termination(10)
-        end
-
-        worker_pids << pid
-      end
-    
-      Process.waitall # waiting for all forked child processes to complete
-    rescue Interrupt
-      # process interrupted. stop all workers...
-      worker_pids.each do |pid|
-        begin
-          Process.kill('TERM', pid)
-        rescue Errno::ESRCH
-        end
-      end
-      Process.waitall # waiting for all forked child processes to complete
+    # method description : driver initialization.
+    # parameters :
+    # - driver : selected consumer mechanism.
+    # how to use :
+    #   driver = Pistonqueue::RedisStream.new
+    #   consumer = Pistonqueue::Consumer.new(driver: driver)
+    def initialize(driver:)
+      @driver = driver
     end
+
+    # method description : receive data from topics, and process it with concurrency based on task type.
+    # parameters :
+    # - topic : target 'topic' to be sent.
+    # - task_type : 'task_type' to determine how to handle concurrency, for example : :io_bound_light / :io_bound_medium / :io_bound_heavy / :cpu_bound.
+    # - **options : additional parameters to support how the consumer driver works.
+    # how to use :
+    #   consumer.subscribe(topic: 'topic_io', task_type: :io_bound_heavy, group: 'group-1', consumer: 'consumer-1') do |data|
+    #     # your logic here
+    #   end
+    def subscribe(topic:, task_type: :io_bound_medium, **options, &service_block)
+      fiber_limit = fetch_fiber_limit(task_type)
+
+      @driver.consume(topic: topic, fiber_limit: fiber_limit, options: options, service_block: service_block)
+    end
+
+    private
+      # method description : determine the number of fibers based on 'task_type'.
+      def fetch_fiber_limit(task_type)
+        FIBER_PROFILE.fetch(task_type)
+      rescue KeyError
+        raise ArgumentError, "Unknown task_type: :#{task_type}. Available types are: #{FIBER_PROFILE.keys}."
+      end
   end
 end
