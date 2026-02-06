@@ -26,6 +26,18 @@ post '/publish' do
   { message_id: result, is_success: result ? true : false }.to_json
 end
 
+get '/orders' do
+  status 200
+
+  page = (params[:page] || 1).to_i
+  per_page = 10
+  offset = (page - 1) * per_page
+
+  orders = Order.limit(per_page).offset(offset)
+
+  { current_page: page, total_data: Order.count, data: orders }.to_json
+end
+
 error do
   status 500
   { error: env['sinatra.error'].message }.to_json
@@ -49,3 +61,6 @@ end
     #     "order_id": "xyz-1", 
     #     "total_payment": 250000 
     # }'
+#   b. list orders :
+    # curl --location 'http://127.0.0.1:4567/orders?page=1'
+
