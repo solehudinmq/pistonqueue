@@ -22,6 +22,7 @@ Async do |task|
         payload = { order_id: "ORD-#{i}", total_payment: rand(10000..500000) }.to_json
         
         response = internet.post(url, headers, payload)
+        response.finish
       rescue => e
         puts "Request #{i} failed: #{e.message}"
       ensure
