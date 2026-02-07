@@ -1,3 +1,4 @@
+# case for consumer by displaying data with log.
 require 'pistonqueue'
 
 consumer = ::Pistonqueue::Consumer.new(driver: :redis_stream)

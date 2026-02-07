@@ -1,3 +1,4 @@
+# case for consumer with heavy computation in cpu bound.
 require 'pistonqueue'
 
 def fibonacci(n)

@@ -1,3 +1,4 @@
+# case for consumers with web scraping.
 require 'pistonqueue'
 require 'async'
 require 'async/http/internet'
