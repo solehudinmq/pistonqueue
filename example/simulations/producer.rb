@@ -1,7 +1,8 @@
 require 'async'
 require 'async/http/internet'
-require 'async/semaphore'
 require 'async/barrier'
+require 'async/semaphore'
+require 'json' 
 
 puts "🚀 Starting Producer Simulation..."
 
@@ -12,34 +13,31 @@ if topic && total_loop
   Async do |task|
     internet = Async::HTTP::Internet.new
     url = "http://localhost:4567/publish"
-    
     headers = [['content-type', 'application/json'], ['x_topic', topic]]
     
-    semaphore = Async::Semaphore.new(100)
     barrier = Async::Barrier.new
+    semaphore = Async::Semaphore.new(100, parent: barrier)
     
     start_time = Time.now
+    n_loop = total_loop.to_i
 
-    total_loop.to_i.times do |i|
-      barrier.async(parent: semaphore) do
+    n_loop.times do |i|
+      semaphore.async do
         begin
           payload = { order_id: "ORD-#{i}", total_payment: rand(10000..500000) }.to_json
-          
-          response = internet.post(url, headers, payload)
-          response.finish
+          response = internet.post(url, headers, [payload]) 
+          response.read 
         rescue => e
           puts "Request #{i} failed: #{e.message}"
-        ensure
-          response&.close
         end
       end
     end
-
+    
     barrier.wait 
 
     duration = Time.now - start_time
-    puts "\n✅ 5000 process completed in #{duration.round(2)} seconds."
-    puts "Throughput: #{(5000 / duration).round(2)} req/sec"
+    puts "\n✅ #{n_loop} process completed in #{duration.round(2)} seconds."
+    puts "Throughput: #{(n_loop / duration).round(2)} req/sec"
   ensure
     internet&.close
   end

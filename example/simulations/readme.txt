@@ -9,10 +9,10 @@
 2. how to check pending data in redis stream :
   - open a new tab
   - redis-cli
-  - XPENDING topic_io_light group-1
-  - XPENDING topic_io_medium group-2
-  - XPENDING topic_io_heavy group-3
-  - XPENDING topic_cpu group-4
+  - XPENDING topic_io_light group-1 + - 10000
+  - XPENDING topic_io_medium group-2 + - 5000
+  - XPENDING topic_io_heavy group-3 + - 1000
+  - XPENDING topic_cpu group-4 + - 100
 
-3. how to delete all data :
+3. how to delete all data in redis :
   - FLUSHALL
