@@ -11,14 +11,10 @@ module Pistonqueue
     include ::Pistonqueue::Logging
     include ::Pistonqueue::RetryHandler
 
-    REDIS_URL = (ENV['REDIS_URL'] || 'redis://127.0.0.1:6379').freeze
-    REDIS_BLOCK_DURATION = (ENV['REDIS_BLOCK_DURATION'] || 2000).to_i.freeze # determines how long (in milliseconds) redis should wait if it finds that there are no new messages at that time.
-    REDIS_BATCH_SIZE = (ENV['REDIS_BATCH_SIZE'] || 10).to_i.freeze # the maximum number of messages to be retrieved in one command in redis.
-    MAX_LOCAL_RETRY = (ENV['MAX_LOCAL_RETRY'] || 1).to_i.freeze # maximum number of retries can be made at the consumer.
-
     # method description : redis initialization.
-    def initialize
-      @redis = Redis.new(url: REDIS_URL)
+    def initialize(config:)
+      @config = config
+      @redis = Redis.new(url: @config.redis_url)
     end
 
     # method description : add new data into redis stream.
@@ -41,14 +37,14 @@ module Pistonqueue
 
       setup_group(topic, group)
 
-      logger.info("🚀 Consumer #{consumer} started on topic [#{topic}].")
+      logger.info("🚀 Consumer #{consumer} started on topic [#{topic}], with fiber limit : #{fiber_limit}.")
 
       Async do |task|
         semaphore = Async::Semaphore.new(fiber_limit)
 
         loop do
           begin
-            messages = @redis.xreadgroup(group, consumer, topic, '>', count: REDIS_BATCH_SIZE, block: REDIS_BLOCK_DURATION) # read new messages from redis stream as part of a consumer group.
+            messages = @redis.xreadgroup(group, consumer, topic, '>', count: @config.redis_batch_size, block: @config.redis_block_duration) # read new messages from redis stream as part of a consumer group.
             next task.sleep(1) if messages.nil? || messages.empty?
 
             messages.each do |_stream, entries|
@@ -59,7 +55,7 @@ module Pistonqueue
 
                   begin
                     # tier 1: retry with exponential backoff and jitter at the consumer level.
-                    ExponentialBackoffJitter.with_local_retry(max_retries: MAX_LOCAL_RETRY) do
+                    ExponentialBackoffJitter.with_local_retry(max_retries: @config.max_local_retry) do
                       service_block.call(data)
                     end
 

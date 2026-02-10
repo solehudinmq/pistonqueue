@@ -8,6 +8,7 @@ gem "activerecord"
 gem "sqlite3"
 gem "async-http"
 gem "nokogiri"
+gem "dotenv"
 gem "pistonqueue", path: "../" # for test in localhost
 # gem "pistonqueue", git: "git@github.com:solehudinmq/pistonqueue.git", branch: "main"
 gem "rackup", "~> 2.2"

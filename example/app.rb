@@ -2,9 +2,23 @@
 require 'sinatra'
 require 'json'
 require 'byebug'
+require 'dotenv'
 require 'pistonqueue'
 
+Dotenv.load('.env')
+
 require_relative 'models/order'
+
+Pistonqueue.configure do |config|
+  config.io_light_fiber = ENV['IO_LIGHT_FIBER']
+  config.io_medium_fiber = ENV['IO_MEDIUM_FIBER']
+  config.io_heavy_fiber = ENV['IO_HEAVY_FIBER']
+  config.cpu_fiber = ENV['CPU_FIBER']
+  config.redis_url = ENV['REDIS_URL']
+  config.redis_block_duration = ENV['REDIS_BLOCK_DURATION']
+  config.redis_batch_size = ENV['REDIS_BATCH_SIZE']
+  config.max_local_retry = ENV['MAX_LOCAL_RETRY']
+end
 
 before do
   content_type :json
