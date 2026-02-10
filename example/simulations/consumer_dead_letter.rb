@@ -12,8 +12,11 @@ Pistonqueue.configure do |config|
   config.redis_url = ENV['REDIS_URL']
   config.redis_block_duration = ENV['REDIS_BLOCK_DURATION']
   config.redis_batch_size = ENV['REDIS_BATCH_SIZE']
-  config.max_retry = ENV['MAX_RETRY']
   config.max_local_retry = ENV['MAX_LOCAL_RETRY']
+  config.max_retry = ENV['MAX_RETRY']
+  config.maxlen = ENV['MAXLEN']
+  config.connection_pool_size = ENV['CONNECTION_POOL_SIZE']
+  config.connection_timeout = ENV['CONNECTION_TIMEOUT']
 end
 
 require_relative '../models/dead_letter'

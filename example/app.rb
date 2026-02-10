@@ -21,6 +21,8 @@ Pistonqueue.configure do |config|
   config.max_local_retry = ENV['MAX_LOCAL_RETRY']
   config.max_retry = ENV['MAX_RETRY']
   config.maxlen = ENV['MAXLEN']
+  config.connection_pool_size = ENV['CONNECTION_POOL_SIZE']
+  config.connection_timeout = ENV['CONNECTION_TIMEOUT']
 end
 
 before do
