@@ -1,0 +1,14 @@
+how to make redis save on disk:
+1. sudo nano /etc/redis/redis.conf
+# Fill in /etc/redis/redis.conf as below :
+# For RDB
+save 900 1    # Save if there is 1 change in 900 seconds (15 minutes)
+save 300 10   # Save if there are 10 changes in 300 seconds (5 minutes)
+save 60 10000 # Save if there are 10000 changes in 60 seconds (1 minute)
+
+# For AOF
+appendonly yes
+appendfsync everysec # Sync to disk every second
+# end of file /etc/redis/redis.conf
+
+2. sudo systemctl restart redis-server

@@ -1,25 +1,26 @@
 # Pistonqueue
 
-Pistonqueue is a Ruby library for handling backpressure conditions, using queue solutions and leveraging concurrency and parallelism to process each incoming request. This allows our applications to handle high traffic without worrying about overloading our systems.
+Pistonqueue is a Ruby library for handling backpressure using a webhook mechanism in our backend systems. Each incoming request is first passed to the message broker and then consumed by the consumer. Each task is executed using Ruby's concurrency capabilities.
 
-Pistonqueue utilizes a queue to receive every incoming request and maximizes the execution of each task through concurrency and parallelism. This optimizes system performance when handling requests from third-party applications.
+Currently, the available message broker mechanisms are :
+- redis stream.
 
 ## High Flow
 
 Potential problems if our application is unable to handle backpressure issues :
 
-![Logo Ruby](https://github.com/solehudinmq/pistonqueue/blob/development/high_flow/Pistonqueue-problem.jpg)
+![Logo Ruby](https://github.com/solehudinmq/pistonqueue/blob/development/high_flow/pistonqueue-problem.jpg)
 
 With Pistonqueue, our application is now able to handle as many requests as possible :
 
-![Logo Ruby](https://github.com/solehudinmq/pistonqueue/blob/development/high_flow/Pistonqueue-solution.jpg)
+![Logo Ruby](https://github.com/solehudinmq/pistonqueue/blob/development/high_flow/pistonqueue-solution-redis-stream.jpg)
 
 ## Requirement
 
 The minimum version of Ruby that must be installed is 3.0.
 
 Requires dependencies to the following gems :
-- concurrent-ruby
+- async
 
 - redis
 
@@ -43,114 +44,84 @@ bundle install
 
 ## Redis Setup to Save Data to Disk
 
-Make redis so that it can save on disk, in case the server dies or crashes :
-
-```bash
-sudo nano /etc/redis/redis.conf
-# Fill in /etc/redis/redis.conf as below :
-# For RDB
-save <second> <total_data_change>
-save <second> <total_data_change>
-save <second> <total_data_change>
-
-# For AOF
-appendonly yes
-appendfsync everysec # Sync to disk every second
-# end of file /etc/redis/redis.conf
-
-sudo systemctl restart redis-server
-```
-
-For more details, you can see the following example : [example/redis_disk.txt](https://github.com/solehudinmq/pistonqueue/blob/development/example/redis_disk.txt).
+Make redis so that it can save on disk, in case the server dies or crashes. For more details, you can see the following example : [example/redis_disk.txt](https://github.com/solehudinmq/pistonqueue/blob/development/example/redis_disk.txt).
 
 ## Usage
 
 ### Consumer
 
-Consumer is an application that receives data from a Redis queue. Here's an example :
+Consumer is an application to retrieve data from redis stream, and process your business logic by utilizing concurrency in ruby. Here's an example :
 
 ```ruby
 require 'pistonqueue'
 
-Pistonqueue::Consumer.run do |data|
-  # logic for processing or storing data from the Redis queue.
+Pistonqueue.configure do |config|
+  config.io_light_fiber = <your-value>
+  config.io_medium_fiber = <your-value>
+  config.io_heavy_fiber = <your-value>
+  config.cpu_fiber = <your-value>
+  config.redis_url = <your-value>
+  config.redis_block_duration = <your-value>
+  config.redis_batch_size = <your-value>
+  config.max_local_retry = <your-value>
+  config.max_retry = <your-value>
+  config.maxlen = <your-value>
+  config.connection_pool_size = <your-value>
+  config.connection_timeout = <your-value>
+end
+
+consumer = ::Pistonqueue::Consumer.new(driver: :redis_stream)
+consumer.subscribe(topic: <your-topic>, task_type: <your-task-type>, is_retry: <your-is-retry>, group: <your-group>, consumer: <your-consumer>) do |data|
+  # your logic here
 end
 ```
 
-For more details, you can see the following example : [example/consumer.rb](https://github.com/solehudinmq/pistonqueue/blob/development/example/consumer.rb).
-
-How to make 'consumer.rb' run in systemd :
-
-```bash
-cd /etc/systemd/system/
-sudo touch your_consumer.service
-which bundler # bundler-installation-location
-which ruby # ruby-installation-location
-
-sudo systemctl stop your_consumer.service
-
-sudo nano your_consumer.service
-# Fill in your_consumer.service as below :
-[Unit]
-Description=<service-description>
-After=network.target redis-server.service
-
-[Service]
-User=<your-server-username>
-WorkingDirectory=<your-consumer-project-folder>
-Environment="REDIS_URL=redis://<username>:<password>@<host>:<port>/<db>"
-ExecStartPre=<bundler-installation-location> install
-ExecStart=<bundler-installation-location> <ruby-installation-location> consumer.rb
-Restart=always
-RestartSec=3
-
-[Install]
-WantedBy=multi-user.target
-# end of file your_consumer.service
-
-sudo systemctl daemon-reload
-sudo systemctl start your_consumer.service
-sudo systemctl enable your_consumer.service
-```
-
-How to see your service status in systemd :
-```bash
-sudo systemctl status your_consumer.service
-```
-
-How to view your service logs in systemd :
-```bash
-sudo journalctl -u your_consumer.service -f
-```
-
-How to restart the service :
-```bash
-sudo systemctl daemon-reload
-sudo systemctl restart your_consumer.service
-```
+Parameter description :
+- topic : target 'topic' to send data to the message broker, for example : 'topic_io'.
+- task_type : the type of task that will be performed on the consumer, for example: :io_bound_light / :io_bound_medium / :io_bound_heavy / :cpu_bound.
+- is_retry : this consumer is intended for retry or main process, for example : true / false.
+- group : grouping multiple workers to work on the same data stream (topic) without competing for messages, for example : 'group_io'.
+- consumer : provides a unique identity to each application instance or thread you run, for example : 'consumer_io'.
 
 For more details, you can see the following example : 
+- consumer for light i/o bound tasks : [example/simulations/consumer_1.rb](https://github.com/solehudinmq/pistonqueue/blob/development/example/simulations/consumer_1.rb).
+- consumer for medium i/o bound tasks : [example/simulations/consumer_2.rb](https://github.com/solehudinmq/pistonqueue/blob/development/example/simulations/consumer_2.rb).
+- consumer for heavy i/o bound tasks : [example/simulations/consumer_3.rb](https://github.com/solehudinmq/pistonqueue/blob/development/example/simulations/consumer_3.rb).
+- consumer for cpu bound tasks : [example/simulations/consumer_4.rb](https://github.com/solehudinmq/pistonqueue/blob/development/example/simulations/consumer_4.rb).
+- consumer to retry process : [example/simulations/consumer_retry.rb](https://github.com/solehudinmq/pistonqueue/blob/development/example/simulations/consumer_retry.rb).
+- consumer for dead letter process : [example/simulations/consumer_dead_letter.rb](https://github.com/solehudinmq/pistonqueue/blob/development/example/simulations/consumer_dead_letter.rb).
 
-- Run consumer in systemd : [example/run_consumer_in_systemd.txt](https://github.com/solehudinmq/pistonqueue/blob/development/example/run_consumer_in_systemd.txt).
-
-- Consumer status in systemd : [example/consumer_status.txt](https://github.com/solehudinmq/pistonqueue/blob/development/example/consumer_status.txt).
-
-- Consumer logs in systemd : [example/consumer_logs.txt](https://github.com/solehudinmq/pistonqueue/blob/development/example/consumer_logs.txt).
-
-- Consumer restart in systemd : [example/consumer_restart.txt](https://github.com/solehudinmq/pistonqueue/blob/development/example/consumer_restart.txt).
+How to make 'consumer' run in systemd service : [example/run_consumer_in_systemd.txt](https://github.com/solehudinmq/pistonqueue/blob/development/example/run_consumer_in_systemd.txt).
 
 ### Producer
 
-A producer is an application used to send requests to a Redis queue. Here's an example :
+Producer is an application for sending data to the message broker, here's an example :
 
 ```ruby
 require 'pistonqueue'
 
-Pistonqueue::Producer.add_to_queue(request_body)
+Pistonqueue.configure do |config|
+  config.io_light_fiber = <your-value>
+  config.io_medium_fiber = <your-value>
+  config.io_heavy_fiber = <your-value>
+  config.cpu_fiber = <your-value>
+  config.redis_url = <your-value>
+  config.redis_block_duration = <your-value>
+  config.redis_batch_size = <your-value>
+  config.max_local_retry = <your-value>
+  config.max_retry = <your-value>
+  config.maxlen = <your-value>
+  config.connection_pool_size = <your-value>
+  config.connection_timeout = <your-value>
+end
+
+producer = ::Pistonqueue::Producer.new(driver: :redis_stream)
+producer.publish(topic: <your-topic>, data: <request-body>)
 ```
 
 Parameter description :
-- request_body : data in hash form that will be sent to the Redis queue. Example : 
+- topic : target 'topic' to send data to the message broker, for example : 'topic_io'.
+- request_body : data in hash form that will be sent to the Redis queue, for example : 
 
 ```json
 {
@@ -161,9 +132,9 @@ Parameter description :
 
 For more details, you can see the following example : [example/app.rb](https://github.com/solehudinmq/pistonqueue/blob/development/example/app.rb).
 
-## How to do Bulk Insert
+## How to do a Stress Test
 
-For more details, you can see the following example : [example/test.rb](https://github.com/solehudinmq/pistonqueue/blob/development/example/test.rb)
+For more details, you can see the following example : [example/simulations/producer.rb](https://github.com/solehudinmq/pistonqueue/blob/development/example/simulations/producer.rb)
 
 ## Example Implementation in Your Application
 

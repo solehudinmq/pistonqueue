@@ -87,8 +87,6 @@ module Pistonqueue
                       
                       logger.error("💀 [#{previous_topic}] max retries reached, moved to dlq topic.")
                     end
-
-                    acknowledge(topic: topic, group: group, message_id: id)
                   else # main process.
                     max_local_retry = @config.max_local_retry.to_i
                     total_trials = 0
@@ -100,9 +98,6 @@ module Pistonqueue
                         service_block.call(payload)
                       end
 
-                      # acknowledge the data so that it is not sent again to the consumer.
-                      acknowledge(topic: topic, group: group, message_id: id)
-
                       logger.info("✅ [#{topic}] id: #{id} success.")
                     rescue => ex
                       # do a retry outside the consumer.
@@ -111,6 +106,9 @@ module Pistonqueue
                       logger.warn("🔄 [#{topic}] failed. moved to retry topic (total trials : #{total_trials}).")
                     end
                   end
+
+                  # acknowledge the data so that it is not sent again to the consumer.
+                  acknowledge(topic: topic, group: group, message_id: id)
                 end
               end
             end
