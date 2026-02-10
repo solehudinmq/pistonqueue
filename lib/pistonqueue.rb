@@ -70,9 +70,9 @@ module Pistonqueue
     # - task_type : 'task_type' to determine how to handle concurrency, for example : :io_bound_light / :io_bound_medium / :io_bound_heavy / :cpu_bound.
     # - **options : additional parameters to support how the consumer driver works.
     # how to use :
-      # consumer.subscribe(topic: 'topic_io', task_type: :io_bound_heavy, group: 'group-1', consumer: 'consumer-1') do |data|
-      #   # your logic here
-      # end
+    # consumer.subscribe(topic: 'topic_io', task_type: :io_bound_heavy, group: 'group-1', consumer: 'consumer-1') do |data|
+    #   # your logic here
+    # end
     def subscribe(topic:, task_type: :io_bound_medium, **options, &service_block)
       fiber_limit = fetch_fiber_limit(task_type)
 
@@ -87,6 +87,7 @@ module Pistonqueue
         raise ArgumentError, "Unknown task_type: :#{task_type}. Available types are: #{FIBER_PROFILE.keys}."
       end
 
+      # method description : mapping the number of fibers based on the type of task.
       def fiber_profile
         { 
           :io_bound_light => CONFIG.io_light_fiber.to_i, # suitable for the task : cache / logging.
