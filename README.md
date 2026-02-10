@@ -50,7 +50,7 @@ Make redis so that it can save on disk, in case the server dies or crashes. For 
 
 ### Consumer
 
-Consumer is an application to retrieve data from redis stream, and process your business logic by utilizing concurrency in ruby. Here's an example :
+Consumer is an application to retrieve data from message broker, and process your business logic by utilizing concurrency in ruby. Here's an example :
 
 ```ruby
 require 'pistonqueue'
@@ -121,7 +121,7 @@ producer.publish(topic: <your-topic>, data: <request-body>)
 
 Parameter description :
 - topic : target 'topic' to send data to the message broker, for example : 'topic_io'.
-- data : hash object to send to redis stream, for example : 
+- data : hash object to send to message broker, for example : 
 
 ```json
 {
@@ -134,7 +134,7 @@ For more details, you can see the following example : [example/app.rb](https://g
 
 ## How to do a Stress Test
 
-Make sure 'consumer' is running in the systemd service, then to send a lot of data to the redis stream, you can follow these steps : [example/run_producer.txt](https://github.com/solehudinmq/pistonqueue/blob/development/example/run_producer.txt)
+Make sure 'consumer' is running in the systemd service, then to send a lot of data to the message broker, you can follow these steps : [example/run_producer.txt](https://github.com/solehudinmq/pistonqueue/blob/development/example/run_producer.txt)
 
 or if you want to do it on localhost only, here's an example : [example/test_on_localhost.txt](https://github.com/solehudinmq/pistonqueue/blob/development/example/test_on_localhost.txt)
 
