@@ -6,15 +6,29 @@ require_relative "pistonqueue/configuration"
 
 module Pistonqueue
   class << self
+    # method description : method to retrieve the env value.
     def configuration
       @configuration ||= Pistonqueue::Configuration.new
     end
 
+    # method description : method to set the value of env.
+    # how to use :
+    #   Pistonqueue.configure do |config|
+    #     config.io_light_fiber = ENV['IO_LIGHT_FIBER']
+    #     config.io_medium_fiber = ENV['IO_MEDIUM_FIBER']
+    #     config.io_heavy_fiber = ENV['IO_HEAVY_FIBER']
+    #     config.cpu_fiber = ENV['CPU_FIBER']
+    #     config.redis_url = ENV['REDIS_URL']
+    #     config.redis_block_duration = ENV['REDIS_BLOCK_DURATION']
+    #     config.redis_batch_size = ENV['REDIS_BATCH_SIZE']
+    #     config.max_local_retry = ENV['MAX_LOCAL_RETRY']
+    #   end
     def configure
       yield(configuration)
     end
   end
 
+  # fetch env data.
   CONFIG = Pistonqueue.configuration
 
   class Producer
