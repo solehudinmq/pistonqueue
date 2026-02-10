@@ -55,10 +55,10 @@ end
 # - open a new tab
 # - cd example/simulations
 # - bundle install
-# - bundle exec ruby producer.rb <topic-name> <total-looping>
+# - bundle exec ruby producer.rb <topic-name> <total-data>
 #   a. parameter description :     
 #     1. topic-name : name of the topic to which data will be sent, for example : topic_io_light / topic_io_medium / topic_io_heavy / topic_cpu.
-#     2. total-looping : amount of looping data, for example : 5000.
+#     2. total-data : amount of looping data, for example : 5000.
 #   b. how to use : 
 #     1. bundle exec ruby producer.rb topic_io_light 10000
 #     2. bundle exec ruby producer.rb topic_io_medium 5000

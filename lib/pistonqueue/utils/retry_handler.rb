@@ -6,7 +6,7 @@ module Pistonqueue
         (2**retries) + rand(0.0..1.0)
       end
 
-      def self.with_local_retry(max_retries:)
+      def self.with_retry(max_retries:)
         current_retry = 0
         begin
           yield
@@ -16,7 +16,7 @@ module Pistonqueue
             sleep(calculate_backoff(current_retry))
             retry
           else
-            raise e # Continue to Scalable Retry (Topic-based)
+            raise e # Continue to scalable retry (topic-based)
           end
         end
       end

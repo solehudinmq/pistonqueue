@@ -1,4 +1,4 @@
-# case for consumer by storing data in database.
+# the retry case fails completely and the data is saved to the dead letter table.
 require 'pistonqueue'
 require 'dotenv'
 
@@ -12,21 +12,20 @@ Pistonqueue.configure do |config|
   config.redis_url = ENV['REDIS_URL']
   config.redis_block_duration = ENV['REDIS_BLOCK_DURATION']
   config.redis_batch_size = ENV['REDIS_BATCH_SIZE']
-  config.max_local_retry = ENV['MAX_LOCAL_RETRY']
   config.max_retry = ENV['MAX_RETRY']
-  config.maxlen = ENV['MAXLEN']
+  config.max_local_retry = ENV['MAX_LOCAL_RETRY']
 end
 
-require_relative '../models/order'
+require_relative '../models/dead_letter'
 
 consumer = ::Pistonqueue::Consumer.new(driver: :redis_stream)
-consumer.subscribe(topic: 'topic_io_medium', task_type: :io_bound_medium, group: 'group-2', consumer: 'consumer-2') do |data|
-  order = Order.new(order_id: data["order_id"], total_payment: data['total_payment'])
-  order.save
+consumer.subscribe(topic: 'topic_io_medium_failure_dlq', task_type: :io_bound_medium, group: 'group-7', consumer: 'consumer-7') do |data|
+  dead_letter = DeadLetter.new(original_id: data["original_id"], original_data: data['original_data'], error: data['error'], failed_at: data['failed_at'])
+  dead_letter.save
 end
 
 # run this command :
 # - open terminal
 # - cd example/simulations
 # - bundle install
-# - bundle exec ruby consumer_2.rb
+# - bundle exec ruby consumer_dead_letter.rb

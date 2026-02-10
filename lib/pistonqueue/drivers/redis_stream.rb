@@ -60,27 +60,34 @@ module Pistonqueue
                   payload = JSON.parse(data["payload"])
 
                   if is_retry # retry process with job.
-                    retry_count = payload['retry_count'] || 1
-                    wait_time = ExponentialBackoffJitter.calculate_backoff(retry_count)
-                    logger.info("💤 ID: #{id} failed previously. Waiting #{wait_time.round(2)}s before trying again...")
-                    task.sleep(wait_time)
+                    max_retry = @config.max_retry.to_i
 
                     begin
-                      service_block.call(payload)
+                      # tier 2: retry with exponential backoff and jitter at the scheduler job level.
+                      ExponentialBackoffJitter.with_retry(max_retries: max_retry) do
+                        service_block.call(payload)
+                      end
 
-                      acknowledge(topic: topic, group: group, message_id: id)
-                      
-                      logger.info("✅ [RETRY SUCCESS] ID: #{id} was successfully processed after #{retry_count} attempts.")
+                      logger.info("✅ Retry [#{topic}] id: #{id} success.")
                     rescue => ex
-                      main_topic = topic.sub('_retry', '')
-                      handle_failure(topic: main_topic, group: group, id: id, retry_count: retry_count, payload: payload, error_msg: ex.message)
+                      error_msg = ex.message
+                      previous_topic = topic.sub('_retry', '')
+
+                      # tier 3: dead letter queue (permanent failure).
+                      move_to_dlq(dlq_topic: "#{previous_topic}_dlq", original_message_id: id, original_data: payload, error_message: error_msg)
+                      
+                      logger.error("💀 [#{previous_topic}] max retries reached, moved to dlq topic.")
                     end
+
+                    acknowledge(topic: topic, group: group, message_id: id)
                   else # main process.
-                    retry_count = payload.fetch('retry_count', 0)
+                    max_local_retry = @config.max_local_retry.to_i
+                    total_trials = 0
 
                     begin
                       # tier 1: retry with exponential backoff and jitter at the consumer level.
-                      ExponentialBackoffJitter.with_local_retry(max_retries: @config.max_local_retry.to_i) do
+                      ExponentialBackoffJitter.with_retry(max_retries: max_local_retry) do
+                        total_trials += 1
                         service_block.call(payload)
                       end
 
@@ -89,7 +96,10 @@ module Pistonqueue
 
                       logger.info("✅ [#{topic}] id: #{id} success.")
                     rescue => ex
-                      handle_failure(topic: topic, group: group, id: id, retry_count: retry_count, payload: payload, error_msg: ex.message)
+                      # do a retry outside the consumer.
+                      produce(topic: "#{topic}_retry", data: payload)
+
+                      logger.warn("🔄 [#{topic}] failed. moved to retry topic (total trials : #{total_trials}).")
                     end
                   end
                 end
@@ -124,33 +134,6 @@ module Pistonqueue
         [ group, consumer ]
       end
 
-      # method description : method to retry or send data to dead letter.
-      # parameters :
-      # - topic : target 'topic' to be sent, for example : 'topic_io'.
-      # - group : a mechanism that allows multiple workers (consumers) to share the workload of the same stream, for example : 'group-1'.
-      # - id : is the unique identity of the message you just finished working on, example : '1707241234567-0'.
-      # - retry_count : current total number of retries.
-      # - payload : data object that will be sent to the topic, for example : { order_id: 'xyz-1', total_payment: 250000 }.
-      # - error_msg : error message from the previous retry process.
-      def handle_failure(topic:, group:, id:, retry_count:, payload:, error_msg:)
-        if retry_count < 5
-          # tier 2: scalable retry (move to a specific topic to prevent consumers from getting stuck).
-          payload['retry_count'] = retry_count + 1
-          payload['last_error'] = error_msg
-          produce(topic: "#{topic}_retry", data: payload)
-
-          logger.warn("🔄 [#{topic}] failed. moved to retry topic (attempt : #{payload['retry_count']}).")
-        else
-          # tier 3: dead letter queue (permanent failure).
-          move_to_dlq(dlq_topic: "#{topic}_dlq", original_message_id: id, payload: payload, error_message: error_msg)
-
-          logger.error("💀 [#{topic}] max retries reached, moved to dlq.")
-        end
-        
-        # ack data in the origin queue to prevent retransmission.
-        acknowledge(topic: topic, group: group, message_id: id)
-      end
-
       # method description : acknowledge data in redis so that it is not sent again to the consumer.
       # parameters :
       # - topic : target 'topic' to be sent, for example : 'topic_io'.
@@ -164,16 +147,16 @@ module Pistonqueue
       # parameters :
       # - dlq_topic : target 'topic' to be sent, for example : 'topic_io_dlq'.
       # - original_message_id : data id from redis stream, for example : '1707241234567-0'.
-      # - payload : data from redis stream, for example : { order_id: 'xyz-1', total_payment: 250000 }.
+      # - original_data : data from redis stream, for example : { order_id: 'xyz-1', total_payment: 250000 }.
       # - error_message : error message failure when maximum retry has been done.
-      def move_to_dlq(dlq_topic:, original_message_id:, payload:, error_message:)
+      def move_to_dlq(dlq_topic:, original_message_id:, original_data:, error_message:)
         # save the original payload, origin id, and error reason to the dlq stream.
-        @redis.xadd(dlq_topic, {
+        @redis.xadd(dlq_topic, { payload: {
           original_id: original_message_id,
-          payload: payload.to_json,
+          original_data: original_data.to_json,
           error: error_message,
           failed_at: Time.now.to_s
-        })
+        }.to_json }, maxlen: ["~", @config.maxlen.to_i])
       end
   end
 end

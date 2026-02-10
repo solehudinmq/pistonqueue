@@ -1,5 +1,94 @@
-steps to run the application :
+run the main application (required) :
+- open terminal
+- cd example
+- bundle install
+- bundle exec ruby app.rb
 
-1. run app.rb
-2. run simulations/consumer_<number>.rb
-3. run simulations/producer.rb
+================= [ To try the test case, select one of the cases below and follow the steps ] =================
+
+1. case of running a light i/o bound task and succeeding :
+- run consumer : 
+  a. open a new tab terminal
+  b. cd example/simulations
+  c. bundle install
+  d. bundle exec ruby consumer_1.rb
+- run producer : 
+  a. open a new tab terminal
+  b. cd example/simulations
+  c. bundle install
+  d. bundle exec ruby producer.rb topic_io_light 10000
+
+2. case of running a medium i/o bound task and succeeding :
+- run consumer : 
+  a. open a new tab terminal
+  b. cd example/simulations
+  c. bundle install
+  d. bundle exec ruby consumer_2.rb
+- run producer : 
+  a. open a new tab terminal
+  b. cd example/simulations
+  c. bundle install
+  d. bundle exec ruby producer.rb topic_io_medium 5000
+
+3. case of running a heavy i/o bound task and succeeding :
+- run consumer : 
+  a. open a new tab terminal
+  b. cd example/simulations
+  c. bundle install
+  d. bundle exec ruby consumer_3.rb
+- run producer : 
+  a. open a new tab terminal
+  b. cd example/simulations
+  c. bundle install
+  d. bundle exec ruby producer.rb topic_io_heavy 1000
+
+4. case of running a cpu bound task and succeeding :
+- run consumer : 
+  a. open a new tab terminal
+  b. cd example/simulations
+  c. bundle install
+  d. bundle exec ruby consumer_4.rb
+- run producer : 
+  a. open a new tab terminal
+  b. cd example/simulations
+  c. bundle install
+  d. bundle exec ruby producer.rb topic_cpu 100
+
+5. case of running a task with successful retry :
+- run consumer 1 : 
+  a. open a new tab terminal
+  b. cd example/simulations
+  c. bundle install
+  d. bundle exec ruby consumer_failure.rb
+- run consumer 2 : 
+  a. open a new tab terminal
+  b. cd example/simulations
+  c. bundle install
+  d. bundle exec ruby consumer_retry.rb
+- run producer : 
+  a. open a new tab terminal
+  b. cd example/simulations
+  c. bundle install
+  d. bundle exec ruby producer.rb topic_io_medium_failure 5000
+
+6. case of running a task with a failed retry and entering a dead letter :
+- run consumer 1 : 
+  a. open a new tab terminal
+  b. cd example/simulations
+  c. bundle install
+  d. bundle exec ruby consumer_failure.rb
+- run consumer 2 :
+  a. open a new tab terminal
+  b. cd example/simulations
+  c. bundle install
+  d. bundle exec ruby consumer_retry_failure.rb
+- run consumer 3 :
+  a. open a new tab terminal
+  b. cd example/simulations
+  c. bundle install
+  d. bundle exec ruby consumer_dead_letter.rb
+- run producer : 
+  a. open a new tab terminal
+  b. cd example/simulations
+  c. bundle install
+  d. bundle exec ruby producer.rb topic_io_medium_failure 5000

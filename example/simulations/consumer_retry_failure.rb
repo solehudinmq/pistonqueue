@@ -1,4 +1,4 @@
-# case for consumer by storing data in database.
+# case for scheduler retry that failed and eventually went into dead letter.
 require 'pistonqueue'
 require 'dotenv'
 
@@ -12,16 +12,16 @@ Pistonqueue.configure do |config|
   config.redis_url = ENV['REDIS_URL']
   config.redis_block_duration = ENV['REDIS_BLOCK_DURATION']
   config.redis_batch_size = ENV['REDIS_BATCH_SIZE']
-  config.max_local_retry = ENV['MAX_LOCAL_RETRY']
   config.max_retry = ENV['MAX_RETRY']
-  config.maxlen = ENV['MAXLEN']
+  config.max_local_retry = ENV['MAX_LOCAL_RETRY']
 end
 
 require_relative '../models/order'
 
 consumer = ::Pistonqueue::Consumer.new(driver: :redis_stream)
-consumer.subscribe(topic: 'topic_io_medium', task_type: :io_bound_medium, group: 'group-2', consumer: 'consumer-2') do |data|
-  order = Order.new(order_id: data["order_id"], total_payment: data['total_payment'])
+consumer.subscribe(topic: 'topic_io_medium_failure_retry', task_type: :io_bound_medium, is_retry: true, group: 'group-7', consumer: 'consumer-7') do |data|
+  payload = data['payload'] # nil
+  order = Order.new(order_id: payload["order_id"], total_payment: payload['total_payment']) # error
   order.save
 end
 
@@ -29,4 +29,4 @@ end
 # - open terminal
 # - cd example/simulations
 # - bundle install
-# - bundle exec ruby consumer_2.rb
+# - bundle exec ruby consumer_retry_failure.rb

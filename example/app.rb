@@ -8,6 +8,7 @@ require 'pistonqueue'
 Dotenv.load('.env')
 
 require_relative 'models/order'
+require_relative 'models/dead_letter'
 
 Pistonqueue.configure do |config|
   config.io_light_fiber = ENV['IO_LIGHT_FIBER']
@@ -18,6 +19,7 @@ Pistonqueue.configure do |config|
   config.redis_block_duration = ENV['REDIS_BLOCK_DURATION']
   config.redis_batch_size = ENV['REDIS_BATCH_SIZE']
   config.max_local_retry = ENV['MAX_LOCAL_RETRY']
+  config.max_retry = ENV['MAX_RETRY']
   config.maxlen = ENV['MAXLEN']
 end
 
@@ -53,6 +55,18 @@ get '/orders' do
   { current_page: page, total_data: Order.count, data: orders }.to_json
 end
 
+get '/dead_letters' do
+  status 200
+
+  page = (params[:page] || 1).to_i
+  per_page = 10
+  offset = (page - 1) * per_page
+
+  dead_letters = DeadLetter.limit(per_page).offset(offset)
+
+  { current_page: page, total_data: DeadLetter.count, data: dead_letters }.to_json
+end
+
 error do
   status 500
   { error: env['sinatra.error'].message }.to_json
@@ -78,4 +92,6 @@ end
     # }'
 #   b. list orders :
     # curl --location 'http://127.0.0.1:4567/orders?page=1'
+#   c. list dead letters : 
+    # curl --location 'http://127.0.0.1:4567/dead_letters?page=1'
 

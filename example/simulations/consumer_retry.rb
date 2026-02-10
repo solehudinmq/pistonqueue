@@ -12,6 +12,7 @@ Pistonqueue.configure do |config|
   config.redis_url = ENV['REDIS_URL']
   config.redis_block_duration = ENV['REDIS_BLOCK_DURATION']
   config.redis_batch_size = ENV['REDIS_BATCH_SIZE']
+  config.max_retry = ENV['MAX_RETRY']
   config.max_local_retry = ENV['MAX_LOCAL_RETRY']
 end
 
