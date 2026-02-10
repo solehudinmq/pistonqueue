@@ -56,27 +56,28 @@ Consumer is an application to retrieve data from message broker, and process you
 require 'pistonqueue'
 
 Pistonqueue.configure do |config|
-  config.io_light_fiber = <your-value>
-  config.io_medium_fiber = <your-value>
-  config.io_heavy_fiber = <your-value>
-  config.cpu_fiber = <your-value>
-  config.redis_url = <your-value>
-  config.redis_block_duration = <your-value>
-  config.redis_batch_size = <your-value>
-  config.max_local_retry = <your-value>
-  config.max_retry = <your-value>
-  config.maxlen = <your-value>
-  config.connection_pool_size = <your-value>
-  config.connection_timeout = <your-value>
+  config.io_light_fiber = <your-value> # default : 500
+  config.io_medium_fiber = <your-value> # default : 100
+  config.io_heavy_fiber = <your-value> # default : 10
+  config.cpu_fiber = <your-value> # default : 1
+  config.redis_url = <your-value> # default : 'redis://127.0.0.1:6379'
+  config.redis_block_duration = <your-value> # default : 2000
+  config.redis_batch_size = <your-value> # default : 10
+  config.max_local_retry = <your-value> # default : 1
+  config.max_retry = <your-value> # default : 3
+  config.maxlen = <your-value> # default : 10000
+  config.connection_pool_size = <your-value> # default : 5
+  config.connection_timeout = <your-value> # default : 1
 end
 
-consumer = ::Pistonqueue::Consumer.new(driver: :redis_stream)
+consumer = ::Pistonqueue::Consumer.new(driver: <your-driver>)
 consumer.subscribe(topic: <your-topic>, task_type: <your-task-type>, is_retry: <your-is-retry>, group: <your-group>, consumer: <your-consumer>) do |data|
   # your logic here
 end
 ```
 
 Parameter description :
+- driver : types of message brokers for implementing back pressure, for example : :redis_stream.
 - topic : target 'topic' to send data to the message broker, for example : 'topic_io'.
 - task_type : the type of task that will be performed on the consumer, for example: :io_bound_light / :io_bound_medium / :io_bound_heavy / :cpu_bound.
 - is_retry : this consumer is intended for retry or main process, for example : true / false.
@@ -101,25 +102,26 @@ Producer is an application for sending data to the message broker, here's an exa
 require 'pistonqueue'
 
 Pistonqueue.configure do |config|
-  config.io_light_fiber = <your-value>
-  config.io_medium_fiber = <your-value>
-  config.io_heavy_fiber = <your-value>
-  config.cpu_fiber = <your-value>
-  config.redis_url = <your-value>
-  config.redis_block_duration = <your-value>
-  config.redis_batch_size = <your-value>
-  config.max_local_retry = <your-value>
-  config.max_retry = <your-value>
-  config.maxlen = <your-value>
-  config.connection_pool_size = <your-value>
-  config.connection_timeout = <your-value>
+  config.io_light_fiber = <your-value> # default : 500
+  config.io_medium_fiber = <your-value> # default : 100
+  config.io_heavy_fiber = <your-value> # default : 10
+  config.cpu_fiber = <your-value> # default : 1
+  config.redis_url = <your-value> # default : 'redis://127.0.0.1:6379'
+  config.redis_block_duration = <your-value> # default : 2000
+  config.redis_batch_size = <your-value> # default : 10
+  config.max_local_retry = <your-value> # default : 1
+  config.max_retry = <your-value> # default : 3
+  config.maxlen = <your-value> # default : 10000
+  config.connection_pool_size = <your-value> # default : 5
+  config.connection_timeout = <your-value> # default : 1
 end
 
-producer = ::Pistonqueue::Producer.new(driver: :redis_stream)
+producer = ::Pistonqueue::Producer.new(driver: <your-driver>)
 producer.publish(topic: <your-topic>, data: <request-body>)
 ```
 
 Parameter description :
+- driver : types of message brokers for implementing back pressure, for example : :redis_stream.
 - topic : target 'topic' to send data to the message broker, for example : 'topic_io'.
 - data : hash object to send to message broker, for example : 
 
