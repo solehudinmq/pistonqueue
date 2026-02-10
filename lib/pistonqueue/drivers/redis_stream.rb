@@ -24,29 +24,34 @@ module Pistonqueue
     def produce(topic:, data: {})
       raise ArgumentError, "The 'data' parameter value must contain an object." if !(data.is_a?(Hash) && data.any?)
 
-      @redis.xadd(topic, { payload: data.to_json })
+      @redis.xadd(topic, { payload: data.to_json }, maxlen: ["~", @config.maxlen.to_i])
     end
 
     # method description : fetch data from redis stream and process the data with high concurrency.
     # parameters :
     # - topic : target 'topic' to be sent, for example : 'topic_io'.
     # - fiber_limit : maximum total fiber, for example : 500.
+    # - is_retry : the consumer will run the retry process, for example : true.
     # - options : additional parameters to support how the consumer driver works, for example : { group: 'group-1', consumer: 'consumer-1' }.
     def consume(topic:, fiber_limit:, is_retry: false, options: {}, service_block:)
       group, consumer = fetch_group_and_consumer(options: options)
 
       setup_group(topic: topic, group: group)
 
-      logger.info("🚀 Consumer #{consumer} started on topic [#{topic}], with fiber limit : #{fiber_limit}.")
-
-      sleep_time = is_retry ? 5 : 1
+      sleep_time = 1
+      if is_retry
+        sleep_time = 5
+        logger.info("🚀 Retry consumer #{consumer} started on topic [#{topic}], with fiber limit : #{fiber_limit}.")
+      else
+        logger.info("🚀 Consumer #{consumer} started on topic [#{topic}], with fiber limit : #{fiber_limit}.")
+      end
 
       Async do |task|
         semaphore = Async::Semaphore.new(fiber_limit)
 
         loop do
           begin
-            messages = @redis.xreadgroup(group, consumer, topic, '>', count: @config.redis_batch_size, block: @config.redis_block_duration) # read new messages from redis stream as part of a consumer group.
+            messages = @redis.xreadgroup(group, consumer, topic, '>', count: @config.redis_batch_size.to_i, block: @config.redis_block_duration.to_i) # read new messages from redis stream as part of a consumer group.
             next task.sleep(sleep_time) if messages.nil? || messages.empty?
 
             messages.each do |_stream, entries|
@@ -67,14 +72,15 @@ module Pistonqueue
                       
                       logger.info("✅ [RETRY SUCCESS] ID: #{id} was successfully processed after #{retry_count} attempts.")
                     rescue => ex
-                      handle_failure(topic: topic, group: group, id: id, retry_count: retry_count, payload: payload, error_msg: ex.message)
+                      main_topic = topic.sub('_retry', '')
+                      handle_failure(topic: main_topic, group: group, id: id, retry_count: retry_count, payload: payload, error_msg: ex.message)
                     end
                   else # main process.
                     retry_count = payload.fetch('retry_count', 0)
 
                     begin
                       # tier 1: retry with exponential backoff and jitter at the consumer level.
-                      ExponentialBackoffJitter.with_local_retry(max_retries: @config.max_local_retry) do
+                      ExponentialBackoffJitter.with_local_retry(max_retries: @config.max_local_retry.to_i) do
                         service_block.call(payload)
                       end
 

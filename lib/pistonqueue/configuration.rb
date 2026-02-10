@@ -1,6 +1,6 @@
 module Pistonqueue
   class Configuration
-    attr_accessor :io_light_fiber, :io_medium_fiber, :io_heavy_fiber, :cpu_fiber, :redis_url, :redis_block_duration, :redis_batch_size, :max_local_retry
+    attr_accessor :io_light_fiber, :io_medium_fiber, :io_heavy_fiber, :cpu_fiber, :redis_url, :redis_block_duration, :redis_batch_size, :max_local_retry, :maxlen
 
     def initialize
       @io_light_fiber = 500
@@ -11,6 +11,7 @@ module Pistonqueue
       @redis_block_duration = 2000 # determines how long (in milliseconds) redis should wait if it finds that there are no new messages at that time.
       @redis_batch_size = 10 # the maximum number of messages to be retrieved in one command in redis.
       @max_local_retry = 1 # maximum number of retries can be made at the consumer.
+      @maxlen = 10000 # limits the maximum number of messages (entries) stored in a single stream.
     end
   end
 end

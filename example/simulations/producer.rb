@@ -64,3 +64,5 @@ end
 #     2. bundle exec ruby producer.rb topic_io_medium 5000
 #     3. bundle exec ruby producer.rb topic_io_heavy 1000
 #     4. bundle exec ruby producer.rb topic_cpu 100
+#   c. how to test failed process :
+#     1. bundle exec ruby producer.rb topic_io_medium_failure 5000

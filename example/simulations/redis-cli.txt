@@ -14,5 +14,13 @@
   - XPENDING topic_io_heavy group-3 + - 1000
   - XPENDING topic_cpu group-4 + - 100
 
+3. how to check retry data in Redis stream :
+  - open a new tab
+  - redis-cli
+  - xrevrange topic_io_light_retry + - count 10000
+  - xrevrange topic_io_medium_retry + - count 5000
+  - xrevrange topic_io_heavy_retry + - count 1000
+  - xrevrange topic_cpu_retry + - count 100
+
 3. how to delete all data in redis :
   - FLUSHALL

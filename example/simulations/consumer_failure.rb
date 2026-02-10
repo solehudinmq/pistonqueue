@@ -1,4 +1,4 @@
-# case for consumer by storing data in database.
+# case for failed consumer and data goes to retry topic.
 require 'pistonqueue'
 require 'dotenv'
 
@@ -19,8 +19,9 @@ end
 require_relative '../models/order'
 
 consumer = ::Pistonqueue::Consumer.new(driver: :redis_stream)
-consumer.subscribe(topic: 'topic_io_medium', task_type: :io_bound_medium, group: 'group-2', consumer: 'consumer-2') do |data|
-  order = Order.new(order_id: data["order_id"], total_payment: data['total_payment'])
+consumer.subscribe(topic: 'topic_io_medium_failure', task_type: :io_bound_medium, group: 'group-6', consumer: 'consumer-6') do |data|
+  payload = data['payload'] # nil
+  order = Order.new(order_id: payload["order_id"], total_payment: payload['total_payment']) # error
   order.save
 end
 
@@ -28,4 +29,4 @@ end
 # - open terminal
 # - cd example/simulations
 # - bundle install
-# - bundle exec ruby consumer_2.rb
+# - bundle exec ruby consumer_failure.rb

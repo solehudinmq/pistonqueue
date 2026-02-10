@@ -75,12 +75,14 @@ module Pistonqueue
     # end
     def subscribe(topic:, task_type: :io_bound_medium, **options, &service_block)
       fiber_limit = fetch_fiber_limit(task_type)
-
-      @driver.consume(topic: topic, fiber_limit: fiber_limit, options: options, service_block: service_block)
+      is_retry = options[:is_retry] || false
+      @driver.consume(topic: topic, fiber_limit: fiber_limit, is_retry: is_retry, options: options, service_block: service_block)
     end
 
     private
       # method description : determine the number of fibers based on 'task_type'.
+      # parameters :
+      # - task_type : the type of task that will be performed by the consumer.
       def fetch_fiber_limit(task_type)
         fiber_profile.fetch(task_type)
       rescue KeyError
