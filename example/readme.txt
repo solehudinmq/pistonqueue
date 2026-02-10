@@ -29,6 +29,11 @@ run the main application (required) :
   b. cd example/simulations
   c. bundle install
   d. bundle exec ruby producer.rb topic_io_medium 5000
+- view data on orders that have been successfully created :
+  a. open a new tab terminal
+  b. cd example
+  c. bundle install
+  d. curl --location 'http://127.0.0.1:4567/orders?page=1'
 
 3. case of running a heavy i/o bound task and succeeding :
 - run consumer : 
@@ -70,6 +75,11 @@ run the main application (required) :
   b. cd example/simulations
   c. bundle install
   d. bundle exec ruby producer.rb topic_io_medium_failure 5000
+- view data on orders that have been successfully created :
+  a. open a new tab terminal
+  b. cd example
+  c. bundle install
+  d. curl --location 'http://127.0.0.1:4567/orders?page=1'
 
 6. case of running a task with a failed retry and entering a dead letter :
 - run consumer 1 : 
@@ -92,3 +102,8 @@ run the main application (required) :
   b. cd example/simulations
   c. bundle install
   d. bundle exec ruby producer.rb topic_io_medium_failure 5000
+- view the dead letters data that was successfully created :
+  a. open a new tab terminal
+  b. cd example
+  c. bundle install
+  d. curl --location 'http://127.0.0.1:4567/dead_letters?page=1'
