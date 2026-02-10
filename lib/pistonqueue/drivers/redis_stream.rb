@@ -1,4 +1,5 @@
 require 'redis'
+require 'connection_pool'
 require 'async'
 require 'async/semaphore'
 
@@ -14,7 +15,10 @@ module Pistonqueue
     # method description : redis initialization.
     def initialize(config:)
       @config = config
-      @redis = Redis.new(url: @config.redis_url)
+
+      @redis_pool = ConnectionPool.new(size: @config.connection_pool_size.to_i, timeout: @config.connection_timeout.to_i) do
+        Redis.new(url: @config.redis_url)
+      end
     end
 
     # method description : add new data into redis stream.
@@ -23,8 +27,10 @@ module Pistonqueue
     # - data : data object that will be sent to the topic, for example : { order_id: 'xyz-1', total_payment: 250000 }.
     def produce(topic:, data: {})
       raise ArgumentError, "The 'data' parameter value must contain an object." if !(data.is_a?(Hash) && data.any?)
-
-      @redis.xadd(topic, { payload: data.to_json }, maxlen: ["~", @config.maxlen.to_i])
+      
+      @redis_pool.with do |conn|
+        conn.xadd(topic, { payload: data.to_json }, maxlen: ["~", @config.maxlen.to_i])
+      end
     end
 
     # method description : fetch data from redis stream and process the data with high concurrency.
@@ -51,7 +57,10 @@ module Pistonqueue
 
         loop do
           begin
-            messages = @redis.xreadgroup(group, consumer, topic, '>', count: @config.redis_batch_size.to_i, block: @config.redis_block_duration.to_i) # read new messages from redis stream as part of a consumer group.
+            messages = @redis_pool.with do |conn|
+              conn.xreadgroup(group, consumer, topic, '>', count: @config.redis_batch_size.to_i, block: @config.redis_block_duration.to_i) # read new messages from redis stream as part of a consumer group.
+            end
+
             next task.sleep(sleep_time) if messages.nil? || messages.empty?
 
             messages.each do |_stream, entries|
@@ -118,9 +127,19 @@ module Pistonqueue
       # - topic : target 'topic' to be sent, for example : 'topic_io'.
       # - group : a mechanism that allows multiple workers (consumers) to share the workload of the same stream, for example : 'group-1'.
       def setup_group(topic:, group:)
-        @redis.xgroup(:create, topic, group, '$', mkstream: true)
+        @redis_pool.with do |conn|
+          conn.xgroup(:create, topic, group, '$', mkstream: true)
+        end
+
+        true
       rescue Redis::CommandError => e
-        logger.warn("Group #{group} is already in topic [#{topic}].")
+        if e.message.include?("BUSYGROUP")
+          logger.warn("Group #{group} already exists in topic [#{topic}]. Skipping...")
+          false
+        else
+          logger.error("Redis setup group error : #{e.message}.")
+          raise e
+        end
       end
 
       # method description : take 'group' and 'consumer' data from options parameters.
@@ -140,7 +159,9 @@ module Pistonqueue
       # - group : a mechanism that allows multiple workers (consumers) to share the workload of the same stream, for example : 'group-1'.
       # - message_id : is the unique identity of the message you just finished working on, example : '1707241234567-0'.
       def acknowledge(topic:, group:, message_id:)
-        @redis.xack(topic, group, message_id)
+        @redis_pool.with do |conn|
+          conn.xack(topic, group, message_id)
+        end
       end
 
       # method description : the retry process failed, and the data was sent to dead letter.
@@ -151,12 +172,14 @@ module Pistonqueue
       # - error_message : error message failure when maximum retry has been done.
       def move_to_dlq(dlq_topic:, original_message_id:, original_data:, error_message:)
         # save the original payload, origin id, and error reason to the dlq stream.
-        @redis.xadd(dlq_topic, { payload: {
-          original_id: original_message_id,
-          original_data: original_data.to_json,
-          error: error_message,
-          failed_at: Time.now.to_s
-        }.to_json }, maxlen: ["~", @config.maxlen.to_i])
+        @redis_pool.with do |conn|
+          conn.xadd(dlq_topic, { payload: {
+            original_id: original_message_id,
+            original_data: original_data.to_json,
+            error: error_message,
+            failed_at: Time.now.to_s
+          }.to_json }, maxlen: ["~", @config.maxlen.to_i])
+        end
       end
   end
 end

@@ -1,6 +1,6 @@
 module Pistonqueue
   class Configuration
-    attr_accessor :io_light_fiber, :io_medium_fiber, :io_heavy_fiber, :cpu_fiber, :redis_url, :redis_block_duration, :redis_batch_size, :max_local_retry, :max_retry, :maxlen
+    attr_accessor :io_light_fiber, :io_medium_fiber, :io_heavy_fiber, :cpu_fiber, :redis_url, :redis_block_duration, :redis_batch_size, :max_local_retry, :max_retry, :maxlen, :connection_pool_size, :connection_timeout
 
     def initialize
       @io_light_fiber = 500
@@ -13,6 +13,8 @@ module Pistonqueue
       @max_local_retry = 1 # maximum number of retries can be made at the consumer.
       @max_retry = 3
       @maxlen = 10000 # limits the maximum number of messages (entries) stored in a single stream.
+      @connection_pool_size = 5 # number of connection pools.
+      @connection_timeout = 1 # connection timeout time in seconds.
     end
   end
 end

@@ -7,7 +7,7 @@ gemspec
 
 gem "async"
 gem "redis"
-gem "async-redis"
+gem "connection_pool"
 
 group :development, :test do
   gem "byebug"
