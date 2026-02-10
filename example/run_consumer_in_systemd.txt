@@ -1,0 +1,143 @@
+1. run consumer for light i/o bound tasks in systemd : 
+- create a new service : 
+  a. open terminal
+  b. cd /etc/systemd/system
+  c. which bundler # bundler-installation-location
+  d. which ruby # ruby-installation-location
+  e. sudo nano light-io-bound-consumer.service
+  f. Fill in 'light-io-bound-consumer.service' according to the file 'services/light-io-bound-consumer.service'
+  g. sudo systemctl daemon-reload
+  h. sudo systemctl enable light-io-bound-consumer.service
+  i. sudo systemctl start light-io-bound-consumer.service
+  j. sudo systemctl status light-io-bound-consumer.service
+  k. sudo journalctl -u light-io-bound-consumer.service -f
+
+- restart service if there are changes in the file :
+  a. open terminal
+  b. cd /etc/systemd/system
+  c. sudo nano light-io-bound-consumer.service
+  d. add changes in 'light-io-bound-consumer.service' file.
+  e. sudo systemctl daemon-reload
+  f. sudo systemctl restart light-io-bound-consumer.service
+  g. sudo systemctl status light-io-bound-consumer.service
+  h. sudo journalctl -u light-io-bound-consumer.service -f
+
+2. run consumer for medium i/o bound tasks in systemd : 
+- create a new service : 
+  a. open terminal
+  b. cd /etc/systemd/system
+  c. which bundler # bundler-installation-location
+  d. which ruby # ruby-installation-location
+  e. sudo nano medium-io-bound-consumer.service
+  f. Fill in 'medium-io-bound-consumer.service' according to the file 'services/medium-io-bound-consumer.service'
+  g. sudo systemctl daemon-reload
+  h. sudo systemctl enable medium-io-bound-consumer.service
+  i. sudo systemctl start medium-io-bound-consumer.service
+  j. sudo systemctl status medium-io-bound-consumer.service
+  k. sudo journalctl -u medium-io-bound-consumer.service -f
+
+- restart service if there are changes in the file :
+  a. open terminal
+  b. cd /etc/systemd/system
+  c. sudo nano medium-io-bound-consumer.service
+  d. add changes in 'medium-io-bound-consumer.service' file.
+  e. sudo systemctl daemon-reload
+  f. sudo systemctl restart medium-io-bound-consumer.service
+  g. sudo systemctl status medium-io-bound-consumer.service
+  h. sudo journalctl -u medium-io-bound-consumer.service -f
+
+3. run consumer for heavy i/o bound tasks in systemd : 
+- create a new service : 
+  a. open terminal
+  b. cd /etc/systemd/system
+  c. which bundler # bundler-installation-location
+  d. which ruby # ruby-installation-location
+  e. sudo nano heavy-io-bound-consumer.service
+  f. Fill in 'heavy-io-bound-consumer.service' according to the file 'services/heavy-io-bound-consumer.service'
+  g. sudo systemctl daemon-reload
+  h. sudo systemctl enable heavy-io-bound-consumer.service
+  i. sudo systemctl start heavy-io-bound-consumer.service
+  j. sudo systemctl status heavy-io-bound-consumer.service
+  k. sudo journalctl -u heavy-io-bound-consumer.service -f
+
+- restart service if there are changes in the file :
+  a. open terminal
+  b. cd /etc/systemd/system
+  c. sudo nano heavy-io-bound-consumer.service
+  d. add changes in 'heavy-io-bound-consumer.service' file.
+  e. sudo systemctl daemon-reload
+  f. sudo systemctl restart heavy-io-bound-consumer.service
+  g. sudo systemctl status heavy-io-bound-consumer.service
+  h. sudo journalctl -u heavy-io-bound-consumer.service -f
+
+4. run consumer for cpu bound tasks in systemd : 
+- create a new service : 
+  a. open terminal
+  b. cd /etc/systemd/system
+  c. which bundler # bundler-installation-location
+  d. which ruby # ruby-installation-location
+  e. sudo nano cpu-bound-consumer.service
+  f. Fill in 'cpu-bound-consumer.service' according to the file 'services/cpu-bound-consumer.service'
+  g. sudo systemctl daemon-reload
+  h. sudo systemctl enable cpu-bound-consumer.service
+  i. sudo systemctl start cpu-bound-consumer.service
+  j. sudo systemctl status cpu-bound-consumer.service
+  k. sudo journalctl -u cpu-bound-consumer.service -f
+
+- restart service if there are changes in the file :
+  a. open terminal
+  b. cd /etc/systemd/system
+  c. sudo nano cpu-bound-consumer.service
+  d. add changes in 'cpu-bound-consumer.service' file.
+  e. sudo systemctl daemon-reload
+  f. sudo systemctl restart cpu-bound-consumer.service
+  g. sudo systemctl status cpu-bound-consumer.service
+  h. sudo journalctl -u cpu-bound-consumer.service -f
+
+5. run consumer for retry in systemd : 
+- create a new service : 
+  a. open terminal
+  b. cd /etc/systemd/system
+  c. which bundler # bundler-installation-location
+  d. which ruby # ruby-installation-location
+  e. sudo nano retry-consumer.service
+  f. Fill in 'retry-consumer.service' according to the file 'services/retry-consumer.service'
+  g. sudo systemctl daemon-reload
+  h. sudo systemctl enable retry-consumer.service
+  i. sudo systemctl start retry-consumer.service
+  j. sudo systemctl status retry-consumer.service
+  k. sudo journalctl -u retry-consumer.service -f
+
+- restart service if there are changes in the file :
+  a. open terminal
+  b. cd /etc/systemd/system
+  c. sudo nano retry-consumer.service
+  d. add changes in 'retry-consumer.service' file.
+  e. sudo systemctl daemon-reload
+  f. sudo systemctl restart retry-consumer.service
+  g. sudo systemctl status retry-consumer.service
+  h. sudo journalctl -u retry-consumer.service -f
+
+6. run consumer for dead letter in systemd : 
+- create a new service : 
+  a. open terminal
+  b. cd /etc/systemd/system
+  c. which bundler # bundler-installation-location
+  d. which ruby # ruby-installation-location
+  e. sudo nano dead-letter-consumer.service
+  f. Fill in 'dead-letter-consumer.service' according to the file 'services/dead-letter-consumer.service'
+  g. sudo systemctl daemon-reload
+  h. sudo systemctl enable dead-letter-consumer.service
+  i. sudo systemctl start dead-letter-consumer.service
+  j. sudo systemctl status dead-letter-consumer.service
+  k. sudo journalctl -u dead-letter-consumer.service -f
+
+- restart service if there are changes in the file :
+  a. open terminal
+  b. cd /etc/systemd/system
+  c. sudo nano dead-letter-consumer.service
+  d. add changes in 'dead-letter-consumer.service' file.
+  e. sudo systemctl daemon-reload
+  f. sudo systemctl restart dead-letter-consumer.service
+  g. sudo systemctl status dead-letter-consumer.service
+  h. sudo journalctl -u dead-letter-consumer.service -f

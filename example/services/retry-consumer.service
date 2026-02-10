@@ -1,0 +1,37 @@
+[Unit]
+Description=Retry Consumer
+After=network.target redis.service
+
+[Service]
+Type=simple
+User=blackedet
+Group=blackedet
+WorkingDirectory=/home/blackedet/MyWorks/pistonqueue/example/simulations
+
+Environment=PATH=/home/blackedet/.local/share/mise/installs/ruby/3.4.5/bin:/usr/local/bin:/usr/bin:/bin
+Environment=IO_LIGHT_FIBER=1000
+Environment=IO_MEDIUM_FIBER=300
+Environment=IO_HEAVY_FIBER=20
+Environment=CPU_FIBER=1
+Environment=REDIS_URL=redis://127.0.0.1:6379
+Environment=REDIS_BLOCK_DURATION=2000
+Environment=REDIS_BATCH_SIZE=50
+Environment=MAX_LOCAL_RETRY=1
+Environment=MAX_RETRY=3
+Environment=MAXLEN=50000
+Environment=CONNECTION_POOL_SIZE=10
+Environment=CONNECTION_TIMEOUT=3
+
+ExecStartPre=/home/blackedet/.local/share/mise/installs/ruby/3.4.5/bin/bundle install
+ExecStart=/home/blackedet/.local/share/mise/installs/ruby/3.4.5/bin/bundle exec ruby consumer_retry.rb
+
+Restart=always
+RestartSec=5
+StartLimitIntervalSec=300
+StartLimitBurst=5
+
+CPUAffinity=2-3
+CPUQuota=80%
+
+[Install]
+WantedBy=multi-user.target
