@@ -1,6 +1,6 @@
 # Pistonqueue
 
-Pistonqueue is a Ruby library for handling backpressure using a webhook mechanism in our backend systems. Each incoming request is first passed to the message broker and then consumed by the consumer. Each task is executed using Ruby's concurrency capabilities.
+Pistonqueue is a ruby library for handling backpressure using a webhook mechanism in our backend systems. Each incoming request is first passed to the message broker and then consumed by the consumer. Each task is executed using Ruby's concurrency capabilities.
 
 Currently, the available message broker mechanisms are :
 - redis stream.
@@ -134,7 +134,9 @@ For more details, you can see the following example : [example/app.rb](https://g
 
 ## How to do a Stress Test
 
-For more details, you can see the following example : [example/simulations/producer.rb](https://github.com/solehudinmq/pistonqueue/blob/development/example/simulations/producer.rb)
+Make sure 'consumer' is running in the systemd service, then to send a lot of data to the redis stream, you can follow these steps : [example/run_producer.txt](https://github.com/solehudinmq/pistonqueue/blob/development/example/run_producer.txt)
+
+or if you want to do it on localhost only, here's an example : [example/test_on_localhost.txt](https://github.com/solehudinmq/pistonqueue/blob/development/example/test_on_localhost.txt)
 
 ## Example Implementation in Your Application
 
