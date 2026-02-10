@@ -121,7 +121,7 @@ producer.publish(topic: <your-topic>, data: <request-body>)
 
 Parameter description :
 - topic : target 'topic' to send data to the message broker, for example : 'topic_io'.
-- request_body : data in hash form that will be sent to the Redis queue, for example : 
+- data : hash object to send to redis stream, for example : 
 
 ```json
 {
