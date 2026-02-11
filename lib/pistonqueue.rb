@@ -90,7 +90,53 @@ module Pistonqueue
       def fetch_fiber_limit(task_type)
         fiber_profile.fetch(task_type)
       rescue KeyError
-        raise ArgumentError, "Unknown task_type: :#{task_type}. Available types are: #{FIBER_PROFILE.keys}."
+        raise ArgumentError, "Unknown task_type: :#{task_type}. Available types are: #{fiber_profile.keys}."
+      end
+
+      # method description : mapping the number of fibers based on the type of task.
+      def fiber_profile
+        { 
+          :io_bound_light => CONFIG.io_light_fiber.to_i, # suitable for the task : cache / logging.
+          :io_bound_medium => CONFIG.io_medium_fiber.to_i, # suitable for the task : api call / query database.
+          :io_bound_heavy => CONFIG.io_heavy_fiber.to_i, # suitable for the task : upload file / web scraping.
+          :cpu_bound => CONFIG.cpu_fiber.to_i # suitable for the task : encryption / compression / image processing.
+        }
+      end
+  end
+
+  class DeadLetter
+    # method description : driver initialization.
+    # parameters :
+    # - driver : selected dead letter mechanism, for example : :redis_stream.
+    # - config : env value settings from client.
+    # how to use :
+    #   dead_letter = Pistonqueue::DeadLetter.new(driver: :redis_stream, config: Pistonqueue.configuration)
+    def initialize(driver:)
+      @driver = Pistonqueue::Driver.init_driver(driver: driver, config: CONFIG)
+    end
+
+    # method description : receive data from topics, and process it with concurrency based on task type.
+    # parameters :
+    # - topic : target 'topic' to be sent.
+    # - task_type : 'task_type' to determine how to handle concurrency, for example : :io_bound_light / :io_bound_medium / :io_bound_heavy / :cpu_bound.
+    # - **options : additional parameters to support how the consumer driver works.
+    # how to use :
+    # dead_letter.subscribe(topic: 'topic_io', task_type: :io_bound_heavy, group: 'group-1', consumer: 'consumer-1') do |data|
+    #   # your logic here
+    # end
+    def subscribe(topic:, task_type: :io_bound_medium, **options, &service_block)
+      fiber_limit = fetch_fiber_limit(task_type)
+      @driver.dead_letter(topic: topic, fiber_limit: fiber_limit, options: options, service_block: service_block)
+    end
+
+    private
+      # method description : determine the number of fibers based on 'task_type'.
+      # parameters :
+      # - task_type : the type of task that will be performed by the consumer.
+      def fetch_fiber_limit(task_type)
+        fiber_profile.fetch(task_type)
+      rescue KeyError
+        raise ArgumentError, "Unknown task_type: :#{task_type}. Available types are: #{fiber_profile.keys}."
       end
 
       # method description : mapping the number of fibers based on the type of task.

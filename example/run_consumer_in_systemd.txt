@@ -22,6 +22,13 @@
   g. sudo systemctl status light-io-bound-consumer.service
   h. sudo journalctl -u light-io-bound-consumer.service -f
 
+- delete service :
+  a. open terminal
+  b. cd /etc/systemd/system
+  c. sudo systemctl stop light-io-bound-consumer.service
+  d. sudo systemctl disable light-io-bound-consumer.service
+  e. sudo rm -rf light-io-bound-consumer.service
+
 2. run consumer for medium i/o bound tasks in systemd : 
 - create a new service : 
   a. open terminal
@@ -45,6 +52,13 @@
   f. sudo systemctl restart medium-io-bound-consumer.service
   g. sudo systemctl status medium-io-bound-consumer.service
   h. sudo journalctl -u medium-io-bound-consumer.service -f
+
+- delete service :
+  a. open terminal
+  b. cd /etc/systemd/system
+  c. sudo systemctl stop medium-io-bound-consumer.service
+  d. sudo systemctl disable medium-io-bound-consumer.service
+  e. sudo rm -rf medium-io-bound-consumer.service
 
 3. run consumer for heavy i/o bound tasks in systemd : 
 - create a new service : 
@@ -70,6 +84,13 @@
   g. sudo systemctl status heavy-io-bound-consumer.service
   h. sudo journalctl -u heavy-io-bound-consumer.service -f
 
+- delete service :
+  a. open terminal
+  b. cd /etc/systemd/system
+  c. sudo systemctl stop heavy-io-bound-consumer.service
+  d. sudo systemctl disable heavy-io-bound-consumer.service
+  e. sudo rm -rf heavy-io-bound-consumer.service
+
 4. run consumer for cpu bound tasks in systemd : 
 - create a new service : 
   a. open terminal
@@ -93,6 +114,13 @@
   f. sudo systemctl restart cpu-bound-consumer.service
   g. sudo systemctl status cpu-bound-consumer.service
   h. sudo journalctl -u cpu-bound-consumer.service -f
+
+- delete service :
+  a. open terminal
+  b. cd /etc/systemd/system
+  c. sudo systemctl stop cpu-bound-consumer.service
+  d. sudo systemctl disable cpu-bound-consumer.service
+  e. sudo rm -rf cpu-bound-consumer.service
 
 5. run consumer for retry in systemd : 
 - create a new service : 
@@ -118,6 +146,13 @@
   g. sudo systemctl status retry-consumer.service
   h. sudo journalctl -u retry-consumer.service -f
 
+- delete service :
+  a. open terminal
+  b. cd /etc/systemd/system
+  c. sudo systemctl stop retry-consumer.service
+  d. sudo systemctl disable retry-consumer.service
+  e. sudo rm -rf retry-consumer.service
+
 6. run consumer for dead letter in systemd : 
 - create a new service : 
   a. open terminal
@@ -141,3 +176,10 @@
   f. sudo systemctl restart dead-letter-consumer.service
   g. sudo systemctl status dead-letter-consumer.service
   h. sudo journalctl -u dead-letter-consumer.service -f
+
+- delete service :
+  a. open terminal
+  b. cd /etc/systemd/system
+  c. sudo systemctl stop dead-letter-consumer.service
+  d. sudo systemctl disable dead-letter-consumer.service
+  e. sudo rm -rf dead-letter-consumer.service
