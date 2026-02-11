@@ -3,6 +3,7 @@
 require 'redis'
 require 'json'
 require 'byebug'
+require 'async'
 
 require_relative '../example/models/order'
 require_relative '../example/models/dead_letter'

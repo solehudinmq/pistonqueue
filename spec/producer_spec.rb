@@ -6,14 +6,14 @@ RSpec.describe ::Pistonqueue::Producer do
   describe "#redis_stream" do
     let(:redis) { Redis.new(url: "redis://127.0.0.1:6379/15") }
     let(:topic) { "events_stream" }
-    let(:producer) { ::Pistonqueue::Producer.new(driver: :redis_stream) }
+    let(:producer) { described_class.new(driver: :redis_stream) }
 
     ::Pistonqueue.configure do |config|
       config.redis_url = "redis://127.0.0.1:6379/15"
     end
 
     it "successfully sent data to redis stream" do
-      request_body = { "user_id" => "123", "action" => "login" }
+      request_body = { order_id: "ORD-1", total_payment: 10000 }
       
       result = producer.publish(topic: topic, data: request_body)
 

@@ -117,6 +117,8 @@ module Pistonqueue
 
             logger.error(log_err)
           end
+
+          break if options[:is_stop]
         end
       end
     end
@@ -173,6 +175,8 @@ module Pistonqueue
           rescue => e
             logger.error("Dead letter consumer #{consumer} on topic [#{topic}] error : #{e.message}.")
           end
+
+          break if options[:is_stop]
         end
       end
     end
