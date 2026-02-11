@@ -94,8 +94,8 @@ For more details, you can see the following example :
 How to make 'consumer' run in systemd service : [example/run_consumer_in_systemd.txt](https://github.com/solehudinmq/pistonqueue/blob/development/example/run_consumer_in_systemd.txt).
 
 Note: 
-- if the main process fails, the data will be saved in the topic '<topic-name>_retry'.
-- if the retry process in the job scheduler fails, the data will be saved in the topic '<topic-name>_dlq'.
+- if the main process fails, the data will be saved in the topic `<topic-name>_retry`.
+- if the retry process in the job scheduler fails, the data will be saved in the topic `<topic-name>_dlq`.
 
 ### Producer
 
@@ -175,7 +175,7 @@ Parameter description :
 For more details, you can see the following example : 
 - consumer for dead letter process : [example/simulations/consumer_dead_letter.rb](https://github.com/solehudinmq/pistonqueue/blob/development/example/simulations/consumer_dead_letter.rb).
 
-Note: if the dead letter process still fails, the data will be saved in the topic '<topic-name>_dlq_archive'.
+Note: if the dead letter process still fails, the data will be saved in the topic `<topic-name>_dlq_archive`.
 
 ## How to do a Stress Test
 
