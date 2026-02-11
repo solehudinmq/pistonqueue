@@ -5,9 +5,6 @@ require 'json'
 require 'byebug'
 require 'async'
 
-require_relative '../example/models/order'
-require_relative '../example/models/dead_letter'
-
 RSpec.configure do |config|
   # Enable flags like --only-failures and --next-failure
   config.example_status_persistence_file_path = ".rspec_status"
@@ -21,7 +18,5 @@ RSpec.configure do |config|
 
   config.before(:each) do
     Redis.new(url: "redis://127.0.0.1:6379/15").flushdb
-    Order.delete_all
-    DeadLetter.delete_all
   end
 end
