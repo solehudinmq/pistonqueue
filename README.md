@@ -11,13 +11,13 @@ Potential problems if our application is unable to handle backpressure issues :
 
 ![Logo Ruby](https://github.com/solehudinmq/pistonqueue/blob/development/high_flow/pistonqueue-problem.jpg)
 
-With Pistonqueue, our application is now able to handle as many requests as possible :
+With pistonqueue, our application is now able to handle as many requests as possible :
 
 ![Logo Ruby](https://github.com/solehudinmq/pistonqueue/blob/development/high_flow/pistonqueue-solution-redis-stream.jpg)
 
 ## Requirement
 
-The minimum version of Ruby that must be installed is 3.0.
+The minimum version of ruby that must be installed is 3.0.
 
 Requires dependencies to the following gems :
 - async
