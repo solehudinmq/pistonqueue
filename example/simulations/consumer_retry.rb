@@ -4,7 +4,7 @@ require 'dotenv'
 
 Dotenv.load('../.env')
 
-Pistonqueue.configure do |config|
+::Pistonqueue.configure do |config|
   config.io_light_fiber = ENV['IO_LIGHT_FIBER']
   config.io_medium_fiber = ENV['IO_MEDIUM_FIBER']
   config.io_heavy_fiber = ENV['IO_HEAVY_FIBER']

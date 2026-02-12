@@ -55,7 +55,7 @@ Consumer is an application to retrieve data from message broker, and process you
 ```ruby
 require 'pistonqueue'
 
-Pistonqueue.configure do |config|
+::Pistonqueue.configure do |config|
   config.io_light_fiber = <your-value> # total fiber to run light i/o bound tasks, recommendation : 500-2000 ( default value : 500 )
   config.io_medium_fiber = <your-value> # total fiber to perform medium bound i/o tasks, recommendation : 100-500 ( default value : 100 )
   config.io_heavy_fiber = <your-value> # total fiber to run heavy i/o bound tasks, recommendation : 10-50 ( default value : 10 )
@@ -104,7 +104,7 @@ Producer is an application for sending data to the message broker, here's an exa
 ```ruby
 require 'pistonqueue'
 
-Pistonqueue.configure do |config|
+::Pistonqueue.configure do |config|
   config.io_light_fiber = <your-value> # total fiber to run light i/o bound tasks, recommendation : 500-2000 ( default value : 500 )
   config.io_medium_fiber = <your-value> # total fiber to perform medium bound i/o tasks, recommendation : 100-500 ( default value : 100 )
   config.io_heavy_fiber = <your-value> # total fiber to run heavy i/o bound tasks, recommendation : 10-50 ( default value : 10 )
@@ -144,7 +144,7 @@ If the retry process via the job scheduler still fails, the data will be stored 
 ```ruby
 require 'pistonqueue'
 
-Pistonqueue.configure do |config|
+::Pistonqueue.configure do |config|
   config.io_light_fiber = <your-value> # total fiber to run light i/o bound tasks, recommendation : 500-2000 ( default value : 500 )
   config.io_medium_fiber = <your-value> # total fiber to perform medium bound i/o tasks, recommendation : 100-500 ( default value : 100 )
   config.io_heavy_fiber = <your-value> # total fiber to run heavy i/o bound tasks, recommendation : 10-50 ( default value : 10 )
