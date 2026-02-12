@@ -81,7 +81,7 @@ Parameter description :
 - redis_block_duration : how long (in milliseconds) this connection will "idly wait" if there are no new messages in the redis stream at that time.
 - redis_batch_size : the maximum number of messages to be retrieved in one command in redis.
 - max_local_retry : maximum number of retries can be made at the consumer.
-- max_retry : maximum retry used in the scheduler.
+- max_retry : maximum retry used for retry processes outside the main consumer.
 - maxlen : if the number of messages has reached the maxlen limit, redis will automatically delete the oldest messages so that new messages can enter, recommendation : small/medium : 10000-50000 / high traffic : 100000 - 500000 / log/audit trail : 1000000+.
 - connection_pool_size : the maximum number of connections that the pool can open and keep alive (persistent).
 - connection_timeout : the maximum duration (in seconds) a thread is willing to wait/queue until a connection is available.
@@ -116,13 +116,13 @@ For more details, you can see the following example :
 - consumer for medium i/o bound tasks : [example/simulations/consumer_2.rb](https://github.com/solehudinmq/pistonqueue/blob/development/example/simulations/consumer_2.rb).
 - consumer for heavy i/o bound tasks : [example/simulations/consumer_3.rb](https://github.com/solehudinmq/pistonqueue/blob/development/example/simulations/consumer_3.rb).
 - consumer for cpu bound tasks : [example/simulations/consumer_4.rb](https://github.com/solehudinmq/pistonqueue/blob/development/example/simulations/consumer_4.rb).
-- consumer for retry process via job scheduler : [example/simulations/consumer_retry.rb](https://github.com/solehudinmq/pistonqueue/blob/development/example/simulations/consumer_retry.rb).
+- consumer for retry performed outside the main consumer : [example/simulations/consumer_retry.rb](https://github.com/solehudinmq/pistonqueue/blob/development/example/simulations/consumer_retry.rb).
 
 How to make 'consumer' run in systemd service : [example/run_consumer_in_systemd.txt](https://github.com/solehudinmq/pistonqueue/blob/development/example/run_consumer_in_systemd.txt).
 
 Note: 
 - if the main process fails, the data will be saved in the topic `<topic-name>_retry`.
-- if the retry process in the job scheduler fails, the data will be saved in the topic `<topic-name>_dlq`.
+- if the retry process outside the main consumer still fails, the data will be sent to the topic. `<topic-name>_dlq`.
 
 ### Producer
 
@@ -153,7 +153,7 @@ For more details, you can see the following example : [example/app.rb](https://g
 
 ### Dead Letter
 
-If the retry process via the job scheduler still fails, the data will be stored in the dead letter. Here's an example :
+If the retry process still fails, the data will be stored in the dead letter. Here's an example :
 
 ```ruby
 require 'pistonqueue'
@@ -172,6 +172,11 @@ Parameter description :
 - task_type : the type of task that will be performed on the consumer, for example: :io_bound_light / :io_bound_medium / :io_bound_heavy / :cpu_bound.
 - group : grouping multiple workers to work on the same data stream (topic) without competing for messages, for example : 'group_io_dlq'.
 - consumer : provides a unique identity to each application instance or thread you run, for example : 'consumer_io_dlq'.
+
+Example of 'data' content for consumer dead letter :
+```
+{"original_id" => "1770897560650-0", "original_data" => "{\"order_id\":\"ORD-1944fd4d-fc00-4581-a132-2d08d72328c3\",\"total_payment\":51658}", "error" => "The retry consumer process failed.", "failed_at" => "2026-02-12 18:59:40 +0700"}
+```
 
 For more details, you can see the following example : 
 - consumer for dead letter process : [example/simulations/consumer_dead_letter.rb](https://github.com/solehudinmq/pistonqueue/blob/development/example/simulations/consumer_dead_letter.rb).

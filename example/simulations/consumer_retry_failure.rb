@@ -1,4 +1,4 @@
-# case for scheduler retry that failed and eventually went into dead letter.
+# in cases where the retry process outside the main consumer still fails, the data will be sent to the dead letter topic.
 require 'pistonqueue'
 
 require_relative '../config'

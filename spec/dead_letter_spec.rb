@@ -31,14 +31,14 @@ RSpec.describe ::Pistonqueue::DeadLetter, type: :reactor do
           end
         end
 
-        # the consumer process retries with the task scheduler to process data that previously failed in the primary consumer, but still fails. The data is then sent to <your-topic>_dlq. [FAILED]
+        # the consumer process tries again outside the main consumer to process the previously failed data, but still fails. The data is then sent to <your-topic>_dlq. [FAILED]
         consumer_task2 = task.async do
           consumer.subscribe(topic: "#{topic}_retry", task_type: :io_bound_light, is_retry: true, group: group_name, consumer: consumer_name, is_stop: true) do |data|
             raise "The retry consumer process failed."
           end
         end
 
-        # the consumer process to receive dead letter data, due to retry failure via schedule job in the previous process. [SUCCESS]
+        # the consumer process for receiving "dead letter" data (data that failed to be retried outside the main consumer). [SUCCESS]
         dead_letter_task = task.async do
           dead_letter.subscribe(topic: "#{topic}_dlq", task_type: :io_bound_light, group: group_name, consumer: consumer_name, is_stop: true) do |data|
             original_data = data[:original_data]
@@ -72,7 +72,7 @@ RSpec.describe ::Pistonqueue::DeadLetter, type: :reactor do
           end
         end
 
-        # the consumer process retries with the task scheduler to process data that previously failed in the primary consumer, but still fails. The data is then sent to <your-topic>_dlq. [FAILED]
+        # the consumer process tries again outside the main consumer to process the previously failed data, but still fails. The data is then sent to <your-topic>_dlq. [FAILED]
         consumer_task2 = task.async do
           consumer.subscribe(topic: "#{topic}_retry", task_type: :io_bound_light, is_retry: true, group: group_name, consumer: consumer_name, is_stop: true) do |data|
             raise "The retry consumer process failed."

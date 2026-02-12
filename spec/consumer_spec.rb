@@ -40,7 +40,7 @@ RSpec.describe ::Pistonqueue::Consumer, type: :reactor do
       end
     end
 
-    it 'successfully received data from redis stream and successfully processed business logic through retry consumer via job scheduler' do
+    it 'successfully received data from redis stream and successfully processed business logic via retry consumer outside the main consumer' do
       order_id = "ORD-#{SecureRandom.uuid}"
       total_payment = rand(10000..99999)
 
@@ -52,7 +52,7 @@ RSpec.describe ::Pistonqueue::Consumer, type: :reactor do
           end
         end
 
-        # the consumer process performs a retry with the job scheduler, to process data that previously failed in the main consumer. [SUCCESS]
+        # The consumer process performs a retry outside the main consumer to process data that previously failed.. [SUCCESS]
         consumer_task2 = task.async do
           consumer.subscribe(topic: "#{topic}_retry", task_type: :io_bound_light, is_retry: true, group: group_name, consumer: consumer_name, is_stop: true) do |data|
             expect(data["order_id"]).to eq(order_id)

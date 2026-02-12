@@ -72,7 +72,7 @@ module Pistonqueue
                     max_retry = @config.max_retry.to_i
 
                     begin
-                      # tier 2: retry with exponential backoff and jitter at the scheduler job level.
+                      # tier 2: exponential backoff retry process with jitter outside the main consumer.
                       ExponentialBackoffJitter.with_retry(max_retries: max_retry) do
                         service_block.call(payload)
                       end
