@@ -48,11 +48,12 @@ Make redis so that it can save on disk, in case the server dies or crashes. For 
 
 ## Usage
 
-### Consumer
+### Setup
 
-Consumer is an application to retrieve data from message broker, and process your business logic by utilizing concurrency in ruby. Here's an example :
+Before using this library, do initial setup first. Here's an example :
 
 ```ruby
+# config.rb
 require 'pistonqueue'
 
 ::Pistonqueue.configure do |config|
@@ -69,6 +70,18 @@ require 'pistonqueue'
   config.connection_pool_size = <your-value> # the maximum number of connections that the pool can open and keep alive (persistent) ( default value : 5 )
   config.connection_timeout = <your-value> # the maximum duration (in seconds) a thread is willing to wait/queue until a connection is available ( default value : 1 )
 end
+```
+
+For more details, you can see the following example : [example/config.rb](https://github.com/solehudinmq/pistonqueue/blob/development/example/config.rb).
+
+### Consumer
+
+Consumer is an application to retrieve data from message broker, and process your business logic by utilizing concurrency in ruby. Here's an example :
+
+```ruby
+require 'pistonqueue'
+
+require_relative 'config'
 
 consumer = ::Pistonqueue::Consumer.new(driver: <your-driver>)
 consumer.subscribe(topic: <your-topic>, task_type: <your-task-type>, is_retry: <your-is-retry>, group: <your-group>, consumer: <your-consumer>) do |data|
@@ -104,20 +117,7 @@ Producer is an application for sending data to the message broker, here's an exa
 ```ruby
 require 'pistonqueue'
 
-::Pistonqueue.configure do |config|
-  config.io_light_fiber = <your-value> # total fiber to run light i/o bound tasks, recommendation : 500-2000 ( default value : 500 )
-  config.io_medium_fiber = <your-value> # total fiber to perform medium bound i/o tasks, recommendation : 100-500 ( default value : 100 )
-  config.io_heavy_fiber = <your-value> # total fiber to run heavy i/o bound tasks, recommendation : 10-50 ( default value : 10 )
-  config.cpu_fiber = <your-value> # total fiber to run cpu bound tasks, recommendation : 1 ( default value : 1 )
-  config.redis_url = <your-value> # your redis url ( default value : 'redis://127.0.0.1:6379' )
-  config.redis_block_duration = <your-value> # how long (in milliseconds) this connection will "idly wait" if there are no new messages in the redis stream at that time ( default value : 2000 )
-  config.redis_batch_size = <your-value> # the maximum number of messages to be retrieved in one command in redis ( default value : 10 )
-  config.max_local_retry = <your-value> # maximum number of retries can be made at the consumer ( default value : 1 )
-  config.max_retry = <your-value> # maximum retry used in the scheduler ( default value : 3 )
-  config.maxlen = <your-value> # if the number of messages has reached the maxlen limit, redis will automatically delete the oldest messages so that new messages can enter, recommendation : small/medium : 10000-50000 / high traffic : 100000 - 500000 / log/audit trail : 1000000+ ( default value : 10000 )
-  config.connection_pool_size = <your-value> # the maximum number of connections that the pool can open and keep alive (persistent) ( default value : 5 )
-  config.connection_timeout = <your-value> # the maximum duration (in seconds) a thread is willing to wait/queue until a connection is available ( default value : 1 )
-end
+require_relative 'config'
 
 producer = ::Pistonqueue::Producer.new(driver: <your-driver>)
 producer.publish(topic: <your-topic>, data: <request-body>)
@@ -144,20 +144,7 @@ If the retry process via the job scheduler still fails, the data will be stored 
 ```ruby
 require 'pistonqueue'
 
-::Pistonqueue.configure do |config|
-  config.io_light_fiber = <your-value> # total fiber to run light i/o bound tasks, recommendation : 500-2000 ( default value : 500 )
-  config.io_medium_fiber = <your-value> # total fiber to perform medium bound i/o tasks, recommendation : 100-500 ( default value : 100 )
-  config.io_heavy_fiber = <your-value> # total fiber to run heavy i/o bound tasks, recommendation : 10-50 ( default value : 10 )
-  config.cpu_fiber = <your-value> # total fiber to run cpu bound tasks, recommendation : 1 ( default value : 1 )
-  config.redis_url = <your-value> # your redis url ( default value : 'redis://127.0.0.1:6379' )
-  config.redis_block_duration = <your-value> # how long (in milliseconds) this connection will "idly wait" if there are no new messages in the redis stream at that time ( default value : 2000 )
-  config.redis_batch_size = <your-value> # the maximum number of messages to be retrieved in one command in redis ( default value : 10 )
-  config.max_local_retry = <your-value> # maximum number of retries can be made at the consumer ( default value : 1 )
-  config.max_retry = <your-value> # maximum retry used in the scheduler ( default value : 3 )
-  config.maxlen = <your-value> # if the number of messages has reached the maxlen limit, redis will automatically delete the oldest messages so that new messages can enter, recommendation : small/medium : 10000-50000 / high traffic : 100000 - 500000 / log/audit trail : 1000000+ ( default value : 10000 )
-  config.connection_pool_size = <your-value> # the maximum number of connections that the pool can open and keep alive (persistent) ( default value : 5 )
-  config.connection_timeout = <your-value> # the maximum duration (in seconds) a thread is willing to wait/queue until a connection is available ( default value : 1 )
-end
+require_relative 'config'
 
 dead_letter = ::Pistonqueue::DeadLetter.new(driver: <your-driver>)
 dead_letter.subscribe(topic: <your-topic>, task_type: <your-task-type>, group: <your-group>, consumer: <your-consumer>) do |data|
