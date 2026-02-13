@@ -45,13 +45,13 @@ cd your_ruby_application
 bundle install
 ```
 
-## Redis Setup to Save Data to Disk
+## Usage
+
+### Redis Setup (optional)
 
 Make redis so that it can save on disk, in case the server dies or crashes. For more details, you can see the following example : [example/redis_disk.txt](https://github.com/solehudinmq/pistonqueue/blob/development/example/redis_disk.txt).
 
-## Usage
-
-### Setup
+### Library Setup
 
 Before using this library, do initial setup first. Here's an example :
 
