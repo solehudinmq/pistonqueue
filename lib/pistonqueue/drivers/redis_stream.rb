@@ -35,22 +35,24 @@ module Pistonqueue
 
     # method description : fetch data from redis stream and process the data with high concurrency.
     # parameters :
-    # - topic : target 'topic' to be sent, for example : 'topic_io' / 'topic_io_retry'.
+    # - topic : target 'topic' to be sent, for example : 'topic_io'.
     # - fiber_limit : maximum total fiber, for example : 500.
-    # - is_retry : the consumer will run the retry process, for example : true.
+    # - is_retry : the consumer will run the retry process, for example : true / false.
     # - options : additional parameters to support how the consumer driver works, for example : { group: 'group-1', consumer: 'consumer-1' }.
     def consume(topic:, fiber_limit:, is_retry: false, options: {}, service_block:)
       group, consumer = fetch_group_and_consumer(options: options)
 
-      setup_group(topic: topic, group: group)
-
       sleep_time = 1
+      consumer_log = "🚀 Main consumer #{consumer} started on topic [#{topic}], with fiber limit : #{fiber_limit}."
       if is_retry
+        topic = "#{topic}_retry"
         sleep_time = 5
-        logger.info("🚀 Retry consumer #{consumer} started on topic [#{topic}], with fiber limit : #{fiber_limit}.")
-      else
-        logger.info("🚀 Consumer #{consumer} started on topic [#{topic}], with fiber limit : #{fiber_limit}.")
+        consumer_log = "🚀 Retry consumer #{consumer} started on topic [#{topic}], with fiber limit : #{fiber_limit}."
       end
+
+      logger.info(consumer_log)
+
+      setup_group(topic: topic, group: group)
 
       Async do |task|
         semaphore = Async::Semaphore.new(fiber_limit)
@@ -77,7 +79,7 @@ module Pistonqueue
                         service_block.call(payload)
                       end
 
-                      logger.info("✅ Retry [#{topic}] id: #{id} success.")
+                      logger.info("✅ Retry consumer with [#{topic}] id: #{id} success.")
                     rescue => ex
                       error_msg = ex.message
                       previous_topic = topic.sub('_retry', '')
@@ -85,7 +87,7 @@ module Pistonqueue
                       # tier 3: dead letter queue (permanent failure).
                       move_to_dlq(dlq_topic: "#{previous_topic}_dlq", original_message_id: id, original_data: payload, error_message: error_msg)
                       
-                      logger.error("💀 [#{previous_topic}] max retries reached, moved to dlq topic.")
+                      logger.error("💀 Retry consumer with [#{previous_topic}] max retries reached, moved to #{previous_topic}_dlq topic.")
                     end
                   else # main process.
                     max_local_retry = @config.max_local_retry.to_i
@@ -98,12 +100,12 @@ module Pistonqueue
                         service_block.call(payload)
                       end
 
-                      logger.info("✅ [#{topic}] id: #{id} success.")
+                      logger.info("✅ Main consumer with [#{topic}] id: #{id} success.")
                     rescue => ex
                       # do a retry outside the consumer.
                       produce(topic: "#{topic}_retry", data: payload)
 
-                      logger.warn("🔄 [#{topic}] failed. moved to retry topic (total trials : #{total_trials}).")
+                      logger.warn("🔄 Main consumer with [#{topic}] failed. moved to #{topic}_retry topic (total trials : #{total_trials}).")
                     end
                   end
 
@@ -113,7 +115,7 @@ module Pistonqueue
               end
             end
           rescue => e
-            log_err = is_retry ? "Retry consumer #{consumer} on topic [#{topic}] error : #{e.message}." : "Consumer #{consumer} on topic [#{topic}] error : #{e.message}."
+            log_err = is_retry ? "Retry consumer #{consumer} on topic [#{topic}] error : #{e.message}." : "Main consumer #{consumer} on topic [#{topic}] error : #{e.message}."
 
             logger.error(log_err)
           end
@@ -125,16 +127,25 @@ module Pistonqueue
 
     # method description : fetch data from redis stream and process dead letter data.
     # parameters :
-    # - topic : target 'topic' to be sent, for example : 'topic_io_dlq'.
+    # - topic : target 'topic' to be sent, for example : 'topic_io'.
     # - fiber_limit : maximum total fiber, for example : 500.
+    # - is_archive : consumer dead letter that still fails in the process do the process manually, for example : true / false.
     # - options : additional parameters to support how the consumer driver works, for example : { group: 'group-2', consumer: 'consumer-2' }.
-    def dead_letter(topic:, fiber_limit:, options: {}, service_block:)
+    def dead_letter(topic:, fiber_limit:, is_archive: false, options: {}, service_block:)
       group, consumer = fetch_group_and_consumer(options: options)
+
+      topic = "#{topic}_dlq"
+      dead_letter_log = "🚀 Dead letter consumer #{consumer} started on topic [#{topic}], with fiber limit : #{fiber_limit}."
+      if is_archive
+        topic = "#{topic}_archive"
+        dead_letter_log = "🚀 Dead letter archive consumer #{consumer} started on topic [#{topic}], with fiber limit : #{fiber_limit}."
+      end
+
+      logger.info(dead_letter_log)
 
       setup_group(topic: topic, group: group)
 
       sleep_time = 5
-      logger.info("🚀 Dead letter consumer #{consumer} started on topic [#{topic}], with fiber limit : #{fiber_limit}.")
 
       Async do |task|
         semaphore = Async::Semaphore.new(fiber_limit)
@@ -151,21 +162,32 @@ module Pistonqueue
               entries.each do |id, data|
                 semaphore.async do
                   payload = JSON.parse(data["payload"])
-                  max_retry = @config.max_retry.to_i
 
-                  begin
-                    ExponentialBackoffJitter.with_retry(max_retries: max_retry) do
+                  if is_archive
+                    begin
                       service_block.call(payload["original_id"], payload['original_data'], payload['error'], payload['failed_at'])
+
+                      logger.info("✅ Dead letter archive [#{topic}] id: #{id} success.")
+                    rescue => ex
+                      logger.error("💀 Dead letter archive [#{topic}] failed to process.")
                     end
+                  else
+                    max_retry = @config.max_retry.to_i
 
-                    logger.info("✅ Dead letter [#{topic}] id: #{id} success.")
-                  rescue => ex
-                    logger.error("💀 Dead letter [#{topic}] max retries reached, moved to dlq_archive topic.")
+                    begin
+                      ExponentialBackoffJitter.with_retry(max_retries: max_retry) do
+                        service_block.call(payload["original_id"], payload['original_data'], payload['error'], payload['failed_at'])
+                      end
 
-                    error_msg = ex.message
-                    previous_topic = topic.sub('_dlq', '')
+                      logger.info("✅ Dead letter [#{topic}] id: #{id} success.")
+                    rescue => ex
+                      error_msg = ex.message
+                      previous_topic = topic.sub('_dlq', '')
 
-                    move_to_dlq(dlq_topic: "#{previous_topic}_dlq_archive", original_message_id: id, original_data: payload, error_message: error_msg)
+                      logger.error("💀 Dead letter [#{topic}] max retries reached, moved to #{previous_topic}_dlq_archive topic.")
+
+                      move_to_dlq(dlq_topic: "#{previous_topic}_dlq_archive", original_message_id: id, original_data: payload, error_message: error_msg)
+                    end
                   end
 
                   acknowledge(topic: topic, group: group, message_id: id)
@@ -173,7 +195,8 @@ module Pistonqueue
               end
             end
           rescue => e
-            logger.error("Dead letter consumer #{consumer} on topic [#{topic}] error : #{e.message}.")
+            log_err = is_archive ? "Dead letter archive consumer #{consumer} on topic [#{topic}] error : #{e.message}." : "Dead letter consumer #{consumer} on topic [#{topic}] error : #{e.message}."
+            logger.error(log_err)
           end
 
           break if options[:is_stop]

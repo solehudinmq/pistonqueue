@@ -33,14 +33,14 @@ RSpec.describe ::Pistonqueue::DeadLetter, type: :reactor do
 
         # the consumer process tries again outside the main consumer to process the previously failed data, but still fails. The data is then sent to <your-topic>_dlq. [FAILED]
         consumer_task2 = task.async do
-          consumer.subscribe(topic: "#{topic}_retry", task_type: :io_bound_light, is_retry: true, group: group_name, consumer: consumer_name, is_stop: true) do |data|
+          consumer.subscribe(topic: topic, task_type: :io_bound_light, is_retry: true, group: group_name, consumer: consumer_name, is_stop: true) do |data|
             raise "The retry consumer process failed."
           end
         end
 
         # the consumer process for receiving "dead letter" data (data that failed to be retried outside the main consumer). [SUCCESS]
         dead_letter_task = task.async do
-          dead_letter.subscribe(topic: "#{topic}_dlq", task_type: :io_bound_light, group: group_name, consumer: consumer_name, is_stop: true) do |data|
+          dead_letter.subscribe(topic: topic, task_type: :io_bound_light, group: group_name, consumer: consumer_name, is_stop: true) do |data|
             original_data = data[:original_data]
             expect(original_data["order_id"]).to eq(order_id)
             expect(original_data["total_payment"]).to eq(total_payment)
@@ -74,21 +74,21 @@ RSpec.describe ::Pistonqueue::DeadLetter, type: :reactor do
 
         # the consumer process tries again outside the main consumer to process the previously failed data, but still fails. The data is then sent to <your-topic>_dlq. [FAILED]
         consumer_task2 = task.async do
-          consumer.subscribe(topic: "#{topic}_retry", task_type: :io_bound_light, is_retry: true, group: group_name, consumer: consumer_name, is_stop: true) do |data|
+          consumer.subscribe(topic: topic, task_type: :io_bound_light, is_retry: true, group: group_name, consumer: consumer_name, is_stop: true) do |data|
             raise "The retry consumer process failed."
           end
         end
 
         # the consumer process to receive dead letter data, but failed during the process. [FAILED]
         dead_letter_task = task.async do
-          dead_letter.subscribe(topic: "#{topic}_dlq", task_type: :io_bound_light, group: group_name, consumer: consumer_name, is_stop: true) do |data|
+          dead_letter.subscribe(topic: topic, task_type: :io_bound_light, group: group_name, consumer: consumer_name, is_stop: true) do |data|
             raise "The dead letter consumer process failed."
           end
         end
 
         # the consumer process to receive dead letter archive data, please manually check the error that occurred. [SUCCESS]
         dead_letter_task2 = task.async do
-          dead_letter.subscribe(topic: "#{topic}_dlq_archive", task_type: :io_bound_light, group: group_name, consumer: consumer_name, is_stop: true) do |data|
+          dead_letter.subscribe(topic: topic, task_type: :io_bound_light, is_archive: true, group: group_name, consumer: consumer_name, is_stop: true) do |data|
             original_data = data[:original_data]
             expect(original_data["order_id"]).to eq(order_id)
             expect(original_data["total_payment"]).to eq(total_payment)

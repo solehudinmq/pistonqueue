@@ -108,11 +108,11 @@ end
 
 Parameter description :
 - driver : types of message brokers for implementing back pressure, for example : :redis_stream.
-- topic : target 'topic' to send data to the message broker, for example : 'topic_io' / 'topic_io_retry'.
+- topic : target 'topic' to send data to the message broker, for example : 'topic_io'.
 - task_type : the type of task that will be performed on the consumer, for example: :io_bound_light / :io_bound_medium / :io_bound_heavy / :cpu_bound.
 - is_retry : this consumer is intended for retry or main process, for example : true / false.
-- group : grouping multiple workers to work on the same data stream (topic) without competing for messages, for example : 'group_io' / 'group_io_retry'.
-- consumer : provides a unique identity to each application instance or thread you run, for example : 'consumer_io' / 'consumer_io_retry'.
+- group : grouping multiple workers to work on the same data stream (topic) without competing for messages, for example : 'group_io'.
+- consumer : provides a unique identity to each application instance or thread you run, for example : 'consumer_io'.
 
 For more details, you can see the following example : 
 - consumer for light i/o bound tasks : [example/simulations/consumer_1.rb](https://github.com/solehudinmq/pistonqueue/blob/development/example/simulations/consumer_1.rb).
@@ -164,17 +164,18 @@ require 'pistonqueue'
 require_relative 'config'
 
 dead_letter = ::Pistonqueue::DeadLetter.new(driver: <your-driver>)
-dead_letter.subscribe(topic: <your-topic>, task_type: <your-task-type>, group: <your-group>, consumer: <your-consumer>) do |original_id, original_data, error, failed_at|
+dead_letter.subscribe(topic: <your-topic>, task_type: <your-task-type>, is_archive: <your-is-archive>, group: <your-group>, consumer: <your-consumer>) do |original_id, original_data, error, failed_at|
   # your logic here
 end
 ```
 
 Parameter description :
 - driver : types of message brokers for implementing back pressure, for example : :redis_stream.
-- topic : target 'topic' to send data to the message broker, for example : 'topic_io_dlq'.
+- topic : target 'topic' to send data to the message broker, for example : 'topic_io'.
 - task_type : the type of task that will be performed on the consumer, for example: :io_bound_light / :io_bound_medium / :io_bound_heavy / :cpu_bound.
-- group : grouping multiple workers to work on the same data stream (topic) without competing for messages, for example : 'group_io_dlq'.
-- consumer : provides a unique identity to each application instance or thread you run, for example : 'consumer_io_dlq'.
+- is_archive : consumer dead letter that still fails in the process do the process manually, for example : true / false.
+- group : grouping multiple workers to work on the same data stream (topic) without competing for messages, for example : 'group_io'.
+- consumer : provides a unique identity to each application instance or thread you run, for example : 'consumer_io'.
 
 For more details, you can see the following example : 
 - consumer for dead letter process : [example/simulations/consumer_dead_letter.rb](https://github.com/solehudinmq/pistonqueue/blob/development/example/simulations/consumer_dead_letter.rb).

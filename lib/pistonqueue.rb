@@ -79,7 +79,7 @@ module Pistonqueue
     # end
     def subscribe(topic:, task_type: :io_bound_medium, **options, &service_block)
       fiber_limit = fetch_fiber_limit(task_type)
-      is_retry = options[:is_retry] || false
+      is_retry = options[:is_retry] ? true : false
       @driver.consume(topic: topic, fiber_limit: fiber_limit, is_retry: is_retry, options: options, service_block: service_block)
     end
 
@@ -126,7 +126,8 @@ module Pistonqueue
     # end
     def subscribe(topic:, task_type: :io_bound_medium, **options, &service_block)
       fiber_limit = fetch_fiber_limit(task_type)
-      @driver.dead_letter(topic: topic, fiber_limit: fiber_limit, options: options, service_block: service_block)
+      is_archive = options[:is_archive] ? true : false
+      @driver.dead_letter(topic: topic, fiber_limit: fiber_limit, is_archive: is_archive, options: options, service_block: service_block)
     end
 
     private

@@ -54,7 +54,7 @@ RSpec.describe ::Pistonqueue::Consumer, type: :reactor do
 
         # The consumer process performs a retry outside the main consumer to process data that previously failed.. [SUCCESS]
         consumer_task2 = task.async do
-          consumer.subscribe(topic: "#{topic}_retry", task_type: :io_bound_light, is_retry: true, group: group_name, consumer: consumer_name, is_stop: true) do |data|
+          consumer.subscribe(topic: topic, task_type: :io_bound_light, is_retry: true, group: group_name, consumer: consumer_name, is_stop: true) do |data|
             expect(data["order_id"]).to eq(order_id)
             expect(data["total_payment"]).to eq(total_payment)
           end
