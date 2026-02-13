@@ -185,9 +185,9 @@ Note: if the dead letter process still fails, the data will be saved in the topi
 
 ## How to do a Stress Test
 
-Make sure 'consumer' is running in the systemd service, then to send a lot of data to the message broker, you can follow these steps : [example/run_producer.txt](https://github.com/solehudinmq/pistonqueue/blob/development/example/run_producer.txt)
+Make sure 'consumer' is running in the systemd service, then to send a lot of data to the message broker, you can follow these steps : [example/run_producer.txt](https://github.com/solehudinmq/pistonqueue/blob/development/example/run_producer.txt).
 
-or if you want to do it on localhost only, here's an example : [example/test_on_localhost.txt](https://github.com/solehudinmq/pistonqueue/blob/development/example/test_on_localhost.txt)
+or if you want to do it on localhost only, here's an example : [example/test_on_localhost.txt](https://github.com/solehudinmq/pistonqueue/blob/development/example/test_on_localhost.txt).
 
 ## Example Implementation in Your Application
 
