@@ -107,3 +107,35 @@ run the main application (required) :
   b. cd example
   c. bundle install
   d. curl --location 'http://127.0.0.1:4567/dead_letters?page=1'
+
+7. case of running a task with retry and dead letter failed :
+- run consumer 1 : 
+  a. open a new tab terminal
+  b. cd example/simulations
+  c. bundle install
+  d. bundle exec ruby consumer_failure.rb
+- run consumer 2 :
+  a. open a new tab terminal
+  b. cd example/simulations
+  c. bundle install
+  d. bundle exec ruby consumer_retry_failure.rb
+- run consumer 3 :
+  a. open a new tab terminal
+  b. cd example/simulations
+  c. bundle install
+  d. bundle exec ruby consumer_dead_letter_failure.rb
+- run consumer 4 :
+  a. open a new tab terminal
+  b. cd example/simulations
+  c. bundle install
+  d. bundle exec ruby consumer_dead_letter_archive.rb
+- run producer : 
+  a. open a new tab terminal
+  b. cd example/simulations
+  c. bundle install
+  d. bundle exec ruby producer.rb topic_io_medium_failure 5000
+- view the dead letters data that was successfully created :
+  a. open a new tab terminal
+  b. cd example
+  c. bundle install
+  d. curl --location 'http://127.0.0.1:4567/dead_letters?page=1'

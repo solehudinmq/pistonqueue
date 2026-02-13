@@ -179,6 +179,7 @@ Parameter description :
 
 For more details, you can see the following example : 
 - consumer for dead letter process : [example/simulations/consumer_dead_letter.rb](https://github.com/solehudinmq/pistonqueue/blob/development/example/simulations/consumer_dead_letter.rb).
+- consumer for dead letter archive process : [example/simulations/consumer_dead_letter_archive.rb](https://github.com/solehudinmq/pistonqueue/blob/development/example/simulations/consumer_dead_letter_archive.rb).
 
 Note: if the dead letter process still fails, the data will be saved in the topic `<topic-name>_dlq_archive`.
 
