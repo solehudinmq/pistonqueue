@@ -155,7 +155,7 @@ module Pistonqueue
 
                   begin
                     ExponentialBackoffJitter.with_retry(max_retries: max_retry) do
-                      service_block.call(payload)
+                      service_block.call(payload["original_id"], payload['original_data'], payload['error'], payload['failed_at'])
                     end
 
                     logger.info("✅ Dead letter [#{topic}] id: #{id} success.")

@@ -17,7 +17,10 @@ With pistonqueue, our application is now able to handle as many requests as poss
 
 ## Requirement
 
-The minimum version of ruby that must be installed is 3.0.
+Minimum software version that must be installed on your device :
+- ruby 3.0
+
+- redis 6.2
 
 Requires dependencies to the following gems :
 - async
@@ -161,7 +164,7 @@ require 'pistonqueue'
 require_relative 'config'
 
 dead_letter = ::Pistonqueue::DeadLetter.new(driver: <your-driver>)
-dead_letter.subscribe(topic: <your-topic>, task_type: <your-task-type>, group: <your-group>, consumer: <your-consumer>) do |data|
+dead_letter.subscribe(topic: <your-topic>, task_type: <your-task-type>, group: <your-group>, consumer: <your-consumer>) do |original_id, original_data, error, failed_at|
   # your logic here
 end
 ```
@@ -172,11 +175,6 @@ Parameter description :
 - task_type : the type of task that will be performed on the consumer, for example: :io_bound_light / :io_bound_medium / :io_bound_heavy / :cpu_bound.
 - group : grouping multiple workers to work on the same data stream (topic) without competing for messages, for example : 'group_io_dlq'.
 - consumer : provides a unique identity to each application instance or thread you run, for example : 'consumer_io_dlq'.
-
-Example of 'data' content for consumer dead letter :
-```
-{"original_id" => "1770897560650-0", "original_data" => "{\"order_id\":\"ORD-1944fd4d-fc00-4581-a132-2d08d72328c3\",\"total_payment\":51658}", "error" => "The retry consumer process failed.", "failed_at" => "2026-02-12 18:59:40 +0700"}
-```
 
 For more details, you can see the following example : 
 - consumer for dead letter process : [example/simulations/consumer_dead_letter.rb](https://github.com/solehudinmq/pistonqueue/blob/development/example/simulations/consumer_dead_letter.rb).
