@@ -101,7 +101,7 @@ require 'pistonqueue'
 require_relative 'config'
 
 consumer = ::Pistonqueue::Consumer.new(driver: <your-driver>)
-consumer.subscribe(topic: <your-topic>, task_type: <your-task-type>, is_retry: <your-is-retry>, group: <your-group>, consumer: <your-consumer>) do |data|
+consumer.perform(topic: <your-topic>, task_type: <your-task-type>, is_retry: <your-is-retry>, group: <your-group>, consumer: <your-consumer>) do |data|
   # your logic here
 end
 ```
@@ -137,7 +137,7 @@ require 'pistonqueue'
 require_relative 'config'
 
 producer = ::Pistonqueue::Producer.new(driver: <your-driver>)
-producer.publish(topic: <your-topic>, data: <request-body>)
+producer.perform(topic: <your-topic>, data: <request-body>)
 ```
 
 Parameter description :
@@ -163,8 +163,8 @@ require 'pistonqueue'
 
 require_relative 'config'
 
-dead_letter = ::Pistonqueue::DeadLetter.new(driver: <your-driver>)
-dead_letter.subscribe(topic: <your-topic>, task_type: <your-task-type>, is_archive: <your-is-archive>, group: <your-group>, consumer: <your-consumer>) do |original_id, original_data, error, failed_at|
+dead_letter = ::Pistonqueue::DlqConsumer.new(driver: <your-driver>)
+dead_letter.perform(topic: <your-topic>, task_type: <your-task-type>, is_archive: <your-is-archive>, group: <your-group>, consumer: <your-consumer>) do |original_id, original_data, error, failed_at|
   # your logic here
 end
 ```

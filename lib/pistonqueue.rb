@@ -77,6 +77,7 @@ module Pistonqueue
     # - topic : target 'topic' to be sent.
     # - task_type : 'task_type' to determine how to handle concurrency, for example : :io_bound_light / :io_bound_medium / :io_bound_heavy / :cpu_bound.
     # - **options : additional parameters to support how the consumer driver works.
+    # - &service_block : explicit block parameter.
     # how to use :
     # consumer.perform(topic: 'topic_io', task_type: :io_bound_heavy, group: 'group-1', consumer: 'consumer-1') do |data|
     #   # your logic here
@@ -119,6 +120,7 @@ module Pistonqueue
     # - topic : target 'topic' to be sent.
     # - task_type : 'task_type' to determine how to handle concurrency, for example : :io_bound_light / :io_bound_medium / :io_bound_heavy / :cpu_bound.
     # - **options : additional parameters to support how the consumer driver works.
+    # - &service_block : explicit block parameter.
     # how to use :
     # dlq_consumer.perform(topic: 'topic_io', task_type: :io_bound_heavy, group: 'group-1', consumer: 'consumer-1') do |data|
     #   # your logic here
@@ -139,5 +141,40 @@ module Pistonqueue
 
         is_archive
       end
+  end
+
+  class RecoveryConsumer
+    include Pistonqueue::Driver
+    include Pistonqueue::UnitExecution
+
+    # method description : driver initialization.
+    # parameters :
+    # - driver : selected dead letter mechanism, for example : :redis_stream.
+    # - config : env value settings from client.
+    # how to use :
+    #   recovery_consumer = Pistonqueue::DlqConsumer.new(driver: :redis_stream, config: Pistonqueue.configuration)
+    def initialize(driver:)
+      @config = Pistonqueue.configuration
+      @driver = init_driver(driver: driver, config: @config)
+    end
+
+    # method description : receive data from topics, and process it with concurrency based on task type.
+    # parameters :
+    # - topic : target 'topic' to be sent.
+    # - task_type : 'task_type' to determine how to handle concurrency, for example : :io_bound_light / :io_bound_medium / :io_bound_heavy / :cpu_bound.
+    # - **options : additional parameters to support how the consumer driver works.
+    # - &service_block : explicit block parameter.
+    # how to use :
+    # recovery_consumer.perform(topic: 'topic_io', task_type: :io_bound_heavy, group: 'group-1', consumer: 'consumer-1') do |data|
+    #   # your logic here
+    # end
+    def perform(topic:, task_type: :io_bound_medium, **options, &service_block)
+      @driver.reclaim(
+        topic: topic, 
+        fiber_limit: fetch_fiber_limit(config: @config, task_type: task_type), 
+        options: options, 
+        service_block: service_block
+      )
+    end
   end
 end
