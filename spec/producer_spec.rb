@@ -17,7 +17,7 @@ RSpec.describe ::Pistonqueue::Producer do
     it "successfully sent data to redis stream" do
       request_body = { order_id: "ORD-1", total_payment: 10000 }
       
-      result = producer.publish(topic: topic, data: request_body)
+      result = producer.perform(topic: topic, data: request_body)
 
       expect(result).to match(/\d+-\d+/)
 
@@ -28,7 +28,7 @@ RSpec.describe ::Pistonqueue::Producer do
     it "failed to send data to redis stream" do
       request_body = "failed"
 
-      expect { producer.publish(topic: topic, data: request_body) }.to raise_error(ArgumentError, "The 'data' parameter value must contain an object.")
+      expect { producer.perform(topic: topic, data: request_body) }.to raise_error(ArgumentError, "The 'data' parameter value must contain an object.")
     end
   end
 end

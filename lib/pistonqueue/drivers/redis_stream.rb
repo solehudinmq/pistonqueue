@@ -3,7 +3,7 @@ require 'connection_pool'
 require 'async'
 require 'async/semaphore'
 
-require_relative '../abstract_driver'
+require_relative '../base/abstract_driver'
 require_relative '../utils/logging'
 require_relative '../utils/retry_handler'
 
@@ -75,7 +75,7 @@ module Pistonqueue
 
                     begin
                       # tier 2: exponential backoff retry process with jitter outside the main consumer.
-                      ExponentialBackoffJitter.with_retry(max_retries: max_retry) do
+                      retry_with_exponential_backoff_jitter(max_retries: max_retry) do
                         service_block.call(payload)
                       end
 
@@ -95,7 +95,7 @@ module Pistonqueue
 
                     begin
                       # tier 1: retry with exponential backoff and jitter at the consumer level.
-                      ExponentialBackoffJitter.with_retry(max_retries: max_local_retry) do
+                      retry_with_exponential_backoff_jitter(max_retries: max_local_retry) do
                         total_trials += 1
                         service_block.call(payload)
                       end
@@ -145,8 +145,6 @@ module Pistonqueue
 
       setup_group(topic: topic, group: group)
 
-      sleep_time = 5
-
       Async do |task|
         semaphore = Async::Semaphore.new(fiber_limit)
 
@@ -156,7 +154,7 @@ module Pistonqueue
               conn.xreadgroup(group, consumer, topic, '>', count: @config.redis_batch_size.to_i, block: @config.redis_block_duration.to_i) # read new messages from redis stream as part of a consumer group.
             end
 
-            next task.sleep(sleep_time) if messages.nil? || messages.empty?
+            next task.sleep(5) if messages.nil? || messages.empty?
 
             messages.each do |_stream, entries|
               entries.each do |id, data|
@@ -175,7 +173,7 @@ module Pistonqueue
                     max_retry = @config.max_retry.to_i
 
                     begin
-                      ExponentialBackoffJitter.with_retry(max_retries: max_retry) do
+                      retry_with_exponential_backoff_jitter(max_retries: max_retry) do
                         service_block.call(payload["original_id"], payload['original_data'], payload['error'], payload['failed_at'])
                       end
 

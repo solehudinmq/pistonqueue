@@ -22,7 +22,7 @@ post '/publish' do
 
   # save request data to redis stream
   producer = ::Pistonqueue::Producer.new(driver: :redis_stream)
-  result = producer.publish(topic: topic, data: request_body)
+  result = producer.perform(topic: topic, data: request_body)
 
   { message_id: result, is_success: result ? true : false }.to_json
 end

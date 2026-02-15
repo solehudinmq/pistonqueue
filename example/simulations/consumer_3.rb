@@ -11,7 +11,7 @@ BASE_URL = "https://webscraper.io/test-sites/e-commerce/static/computers/laptops
 results = []
 
 consumer = ::Pistonqueue::Consumer.new(driver: :redis_stream)
-consumer.subscribe(topic: 'topic_io_heavy', task_type: :io_bound_heavy, group: 'group-3', consumer: 'consumer-3') do |data|  
+consumer.perform(topic: 'topic_io_heavy', task_type: :io_bound_heavy, group: 'group-3', consumer: 'consumer-3') do |data|  
   begin
     (1..3).each do |page_num|
       url = "#{BASE_URL}?page=#{page_num}"

@@ -1,8 +1,9 @@
 # frozen_string_literal: true
 
 require_relative "pistonqueue/version"
-require_relative "pistonqueue/utils/driver"
+require_relative "pistonqueue/driver"
 require_relative "pistonqueue/configuration"
+require_relative "pistonqueue/utils/unit_execution"
 
 module Pistonqueue
   class << self
@@ -32,10 +33,9 @@ module Pistonqueue
     end
   end
 
-  # fetch env data.
-  CONFIG = Pistonqueue.configuration
-
   class Producer
+    include Pistonqueue::Driver
+
     # method description : driver initialization.
     # parameters :
     # - driver : selected producer mechanism, for example : :redis_stream.
@@ -43,7 +43,7 @@ module Pistonqueue
     # how to use :
     #   producer = Pistonqueue::Producer.new(driver: :redis_stream, config: Pistonqueue.configuration)
     def initialize(driver:)
-      @driver = Pistonqueue::Driver.init_driver(driver: driver, config: CONFIG)
+      @driver = init_driver(driver: driver, config: Pistonqueue.configuration)
     end
 
     # method description : send data to the 'topic'.
@@ -51,13 +51,16 @@ module Pistonqueue
     # - topic : target 'topic' to be sent.
     # - data : data object that will be sent to the topic.
     # how to use :
-    #   producer.publish(topic: 'topic_io', data: { order_id: 'xyz-1', total_payment: 250000 })
-    def publish(topic:, data:)
+    #   producer.perform(topic: 'topic_io', data: { order_id: 'xyz-1', total_payment: 250000 })
+    def perform(topic:, data:)
       @driver.produce(topic: topic, data: data)
     end
   end
 
   class Consumer
+    include Pistonqueue::Driver
+    include Pistonqueue::UnitExecution
+
     # method description : driver initialization.
     # parameters :
     # - driver : selected consumer mechanism, for example : :redis_stream.
@@ -65,7 +68,8 @@ module Pistonqueue
     # how to use :
     #   consumer = Pistonqueue::Consumer.new(driver: :redis_stream, config: Pistonqueue.configuration)
     def initialize(driver:)
-      @driver = Pistonqueue::Driver.init_driver(driver: driver, config: CONFIG)
+      @config = Pistonqueue.configuration
+      @driver = init_driver(driver: driver, config: @config)
     end
 
     # method description : receive data from topics, and process it with concurrency based on task type.
@@ -74,45 +78,40 @@ module Pistonqueue
     # - task_type : 'task_type' to determine how to handle concurrency, for example : :io_bound_light / :io_bound_medium / :io_bound_heavy / :cpu_bound.
     # - **options : additional parameters to support how the consumer driver works.
     # how to use :
-    # consumer.subscribe(topic: 'topic_io', task_type: :io_bound_heavy, group: 'group-1', consumer: 'consumer-1') do |data|
+    # consumer.perform(topic: 'topic_io', task_type: :io_bound_heavy, group: 'group-1', consumer: 'consumer-1') do |data|
     #   # your logic here
     # end
-    def subscribe(topic:, task_type: :io_bound_medium, **options, &service_block)
-      fiber_limit = fetch_fiber_limit(task_type)
-      is_retry = options[:is_retry] ? true : false
-      @driver.consume(topic: topic, fiber_limit: fiber_limit, is_retry: is_retry, options: options, service_block: service_block)
+    def perform(topic:, task_type: :io_bound_medium, **options, &service_block)
+      @driver.consume(
+        topic: topic, 
+        fiber_limit: fetch_fiber_limit(config: @config, task_type: task_type), 
+        is_retry: fetch_is_retry(is_retry: options[:is_retry] || false), 
+        options: options, 
+        service_block: service_block
+      )
     end
 
     private
-      # method description : determine the number of fibers based on 'task_type'.
-      # parameters :
-      # - task_type : the type of task that will be performed by the consumer.
-      def fetch_fiber_limit(task_type)
-        fiber_profile.fetch(task_type)
-      rescue KeyError
-        raise ArgumentError, "Unknown task_type: :#{task_type}. Available types are: #{fiber_profile.keys}."
-      end
+      def fetch_is_retry(is_retry: false)
+        raise ArgumentError, "The 'is_retry' parameter must be a boolean." unless [true, false].include?(is_retry)
 
-      # method description : mapping the number of fibers based on the type of task.
-      def fiber_profile
-        { 
-          :io_bound_light => CONFIG.io_light_fiber.to_i, # suitable for the task : cache / logging.
-          :io_bound_medium => CONFIG.io_medium_fiber.to_i, # suitable for the task : api call / query database.
-          :io_bound_heavy => CONFIG.io_heavy_fiber.to_i, # suitable for the task : upload file / web scraping.
-          :cpu_bound => CONFIG.cpu_fiber.to_i # suitable for the task : encryption / compression / image processing.
-        }
+        is_retry
       end
   end
 
-  class DeadLetter
+  class DlqConsumer
+    include Pistonqueue::Driver
+    include Pistonqueue::UnitExecution
+
     # method description : driver initialization.
     # parameters :
     # - driver : selected dead letter mechanism, for example : :redis_stream.
     # - config : env value settings from client.
     # how to use :
-    #   dead_letter = Pistonqueue::DeadLetter.new(driver: :redis_stream, config: Pistonqueue.configuration)
+    #   dlq_consumer = Pistonqueue::DlqConsumer.new(driver: :redis_stream, config: Pistonqueue.configuration)
     def initialize(driver:)
-      @driver = Pistonqueue::Driver.init_driver(driver: driver, config: CONFIG)
+      @config = Pistonqueue.configuration
+      @driver = init_driver(driver: driver, config: @config)
     end
 
     # method description : receive data from topics, and process it with concurrency based on task type.
@@ -121,33 +120,24 @@ module Pistonqueue
     # - task_type : 'task_type' to determine how to handle concurrency, for example : :io_bound_light / :io_bound_medium / :io_bound_heavy / :cpu_bound.
     # - **options : additional parameters to support how the consumer driver works.
     # how to use :
-    # dead_letter.subscribe(topic: 'topic_io', task_type: :io_bound_heavy, group: 'group-1', consumer: 'consumer-1') do |data|
+    # dlq_consumer.perform(topic: 'topic_io', task_type: :io_bound_heavy, group: 'group-1', consumer: 'consumer-1') do |data|
     #   # your logic here
     # end
-    def subscribe(topic:, task_type: :io_bound_medium, **options, &service_block)
-      fiber_limit = fetch_fiber_limit(task_type)
-      is_archive = options[:is_archive] ? true : false
-      @driver.dead_letter(topic: topic, fiber_limit: fiber_limit, is_archive: is_archive, options: options, service_block: service_block)
+    def perform(topic:, task_type: :io_bound_medium, **options, &service_block)
+      @driver.dead_letter(
+        topic: topic, 
+        fiber_limit: fetch_fiber_limit(config: @config, task_type: task_type), 
+        is_archive: fetch_is_archive(is_archive: options[:is_archive] || false), 
+        options: options, 
+        service_block: service_block
+      )
     end
 
     private
-      # method description : determine the number of fibers based on 'task_type'.
-      # parameters :
-      # - task_type : the type of task that will be performed by the consumer.
-      def fetch_fiber_limit(task_type)
-        fiber_profile.fetch(task_type)
-      rescue KeyError
-        raise ArgumentError, "Unknown task_type: :#{task_type}. Available types are: #{fiber_profile.keys}."
-      end
+      def fetch_is_archive(is_archive: false)
+        raise ArgumentError, "The 'is_archive' parameter must be a boolean." unless [true, false].include?(is_archive)
 
-      # method description : mapping the number of fibers based on the type of task.
-      def fiber_profile
-        { 
-          :io_bound_light => CONFIG.io_light_fiber.to_i, # suitable for the task : cache / logging.
-          :io_bound_medium => CONFIG.io_medium_fiber.to_i, # suitable for the task : api call / query database.
-          :io_bound_heavy => CONFIG.io_heavy_fiber.to_i, # suitable for the task : upload file / web scraping.
-          :cpu_bound => CONFIG.cpu_fiber.to_i # suitable for the task : encryption / compression / image processing.
-        }
+        is_archive
       end
   end
 end
