@@ -87,9 +87,11 @@ module Pistonqueue
         topic: topic, 
         fiber_limit: fetch_fiber_limit(config: @config, task_type: task_type), 
         is_retry: fetch_is_retry(is_retry: options[:is_retry] || false), 
-        options: options, 
-        service_block: service_block
-      )
+        is_stop: fetch_is_stop(is_stop: options[:is_stop]),
+        options: options
+      ) do |payload|
+        service_block.call(payload)
+      end
     end
 
     private
@@ -97,6 +99,14 @@ module Pistonqueue
         raise ArgumentError, "The 'is_retry' parameter must be a boolean." unless [true, false].include?(is_retry)
 
         is_retry
+      end
+
+      def fetch_is_stop(is_stop: false)
+        if is_stop != true
+          is_stop = false
+        end
+
+        is_stop
       end
   end
 
@@ -130,9 +140,11 @@ module Pistonqueue
         topic: topic, 
         fiber_limit: fetch_fiber_limit(config: @config, task_type: task_type), 
         is_archive: fetch_is_archive(is_archive: options[:is_archive] || false), 
-        options: options, 
-        service_block: service_block
-      )
+        is_stop: fetch_is_stop(is_stop: options[:is_stop]),
+        options: options
+      ) do |original_id, original_data, err_msg, failed_at|
+        service_block.call(original_id, original_data, err_msg, failed_at)
+      end
     end
 
     private
@@ -140,6 +152,14 @@ module Pistonqueue
         raise ArgumentError, "The 'is_archive' parameter must be a boolean." unless [true, false].include?(is_archive)
 
         is_archive
+      end
+
+      def fetch_is_stop(is_stop: false)
+        if is_stop != true
+          is_stop = false
+        end
+
+        is_stop
       end
   end
 
