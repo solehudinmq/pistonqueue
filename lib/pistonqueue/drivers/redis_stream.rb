@@ -42,50 +42,23 @@ module Pistonqueue
     # - options : additional parameters to support how the consumer driver works, for example : { group: 'group-1', consumer: 'consumer-1' }.
     def consume(topic:, fiber_limit:, is_retry: false, is_stop: false, options: {}, &execution_block)
       group, consumer = fetch_group_and_consumer(options: options)
+
+      log_message = "🚀 main consumer #{consumer} started on topic [#{topic}], with fiber limit : #{fiber_limit}."
       if is_retry
         topic = "#{topic}_retry"
-        logger.info("🚀 retry consumer #{consumer} started on topic [#{topic}], with fiber limit : #{fiber_limit}.")
+        log_message = "🚀 retry consumer #{consumer} started on topic [#{topic}], with fiber limit : #{fiber_limit}."
+      end
 
-        execute(topic: topic, group: group, consumer: consumer, fiber_limit: fiber_limit, sleep_time: 5, is_stop: is_stop, type: :regular) do |message_id, payload|
-          max_retry = @config.max_retry.to_i
+      logger.info(log_message)
 
-          begin
-            # tier 2: exponential backoff retry process with jitter outside the main consumer.
-            retry_with_exponential_backoff_jitter(max_retries: max_retry) do
-              execution_block.call(payload)
-            end
-
-            logger.info("✅ retry consumer with [#{topic}] id: #{message_id} success.")
-          rescue => ex
-            error_msg = ex.message
-            previous_topic = topic.sub('_retry', '')
-
-            # tier 3: dead letter queue (permanent failure).
-            move_to_dlq(dlq_topic: "#{previous_topic}_dlq", original_message_id: message_id, original_data: payload.to_json, error_message: error_msg)
-            
-            logger.error("💀 retry consumer with [#{previous_topic}] max retries reached, moved to #{previous_topic}_dlq topic.")
+      execute(topic: topic, group: group, consumer: consumer, fiber_limit: fiber_limit, sleep_time: 1, is_stop: is_stop, type: :regular) do |message_id, payload|
+        if is_retry
+          retry_process_consumer(topic: topic, message_id: message_id, payload: payload) do |data|
+            execution_block.call(data)
           end
-        end
-      else
-        logger.info("🚀 main consumer #{consumer} started on topic [#{topic}], with fiber limit : #{fiber_limit}.")
-
-        execute(topic: topic, group: group, consumer: consumer, fiber_limit: fiber_limit, sleep_time: 1, is_stop: is_stop, type: :regular) do |message_id, payload|
-          max_local_retry = @config.max_local_retry.to_i
-          total_trials = 0
-
-          begin
-            # tier 1: retry with exponential backoff and jitter at the consumer level.
-            retry_with_exponential_backoff_jitter(max_retries: max_local_retry) do
-              total_trials += 1
-              execution_block.call(payload)
-            end
-
-            logger.info("✅ main consumer with [#{topic}] id: #{message_id} success.")
-          rescue => ex
-            # do a retry outside the consumer.
-            produce(topic: "#{topic}_retry", data: payload)
-
-            logger.warn("🔄 main consumer with [#{topic}] failed. moved to #{topic}_retry topic (total trials : #{total_trials}).")
+        else
+          main_process_consumer(topic: topic, message_id: message_id, payload: payload) do |data|
+            execution_block.call(data)
           end
         end
       end
@@ -101,39 +74,24 @@ module Pistonqueue
     def dead_letter(topic:, fiber_limit:, is_archive: false, is_stop: false, options: {}, &execution_block)
       group, consumer = fetch_group_and_consumer(options: options)
 
+      topic = "#{topic}_dlq"
+      log_message = "🚀 dead_letter consumer #{consumer} started on topic [#{topic}], with fiber limit : #{fiber_limit}."
+
       if is_archive
-        topic = "#{topic}_dlq_archive"
-        logger.info("🚀 dead_letter_archive consumer #{consumer} started on topic [#{topic}], with fiber limit : #{fiber_limit}.")
+        topic = "#{topic}_archive"
+        log_message = "🚀 dead_letter_archive consumer #{consumer} started on topic [#{topic}], with fiber limit : #{fiber_limit}."
+      end
 
-        execute(topic: topic, group: group, consumer: consumer, fiber_limit: fiber_limit, sleep_time: 5, is_stop: is_stop, type: :dead_letter) do |message_id, original_id, original_data, err_msg, failed_at|
-          begin
-            execution_block.call(original_id, original_data, err_msg, failed_at)
+      logger.info(log_message)
 
-            logger.info("✅ dead_letter_archive [#{topic}] id: #{message_id} success.")
-          rescue => ex
-            logger.error("💀 dead_letter_archive [#{topic}] failed to process.")
+      execute(topic: topic, group: group, consumer: consumer, fiber_limit: fiber_limit, sleep_time: 5, is_stop: is_stop, type: :dead_letter) do |message_id, original_id, original_data, err_msg, failed_at|
+        if is_archive
+          dead_letter_archive_process_consumer(topic: topic, message_id: message_id, original_id: original_id, original_data: original_data, err_msg: err_msg, failed_at: failed_at) do |id, data, err, err_at|
+            execution_block.call(id, data, err, err_at)
           end
-        end
-      else
-        topic = "#{topic}_dlq"
-        logger.info("🚀 dead_letter consumer #{consumer} started on topic [#{topic}], with fiber limit : #{fiber_limit}.")
-
-        execute(topic: topic, group: group, consumer: consumer, fiber_limit: fiber_limit, sleep_time: 5, is_stop: is_stop, type: :dead_letter) do |message_id, original_id, original_data, err_msg, failed_at|
-          max_retry = @config.max_retry.to_i
-
-          begin
-            retry_with_exponential_backoff_jitter(max_retries: max_retry) do
-              execution_block.call(original_id, original_data, err_msg, failed_at)
-            end
-
-            logger.info("✅ dead_letter [#{topic}] id: #{message_id} success.")
-          rescue => ex
-            error_msg = ex.message
-            previous_topic = topic.sub('_dlq', '')
-
-            logger.error("💀 dead_letter [#{topic}] max retries reached, moved to #{previous_topic}_dlq_archive topic.")
-
-            move_to_dlq(dlq_topic: "#{previous_topic}_dlq_archive", original_message_id: message_id, original_data: original_data, error_message: error_msg)
+        else
+          dead_letter_process_consumer(topic: topic, message_id: message_id, original_id: original_id, original_data: original_data, err_msg: err_msg, failed_at: failed_at) do |id, data, err, err_at|
+            execution_block.call(id, data, err, err_at)
           end
         end
       end
@@ -310,7 +268,7 @@ module Pistonqueue
       # - type : the type of consumer logic that is executed, for example : :regular / :dead_letter.
       # - special_id : special symbols to provide certain logical instructions to redis, for example : '>' / '0' / '$'
       # - is_stop : make sure the value is always 'false' when running in production, because this is only used to stop unit tests, for example : false / true.
-      def execute(topic:, group:, consumer:, fiber_limit:, sleep_time:, type:, special_id: '>', is_stop: false, &worker_block)
+      def execute(topic:, group:, consumer:, fiber_limit:, sleep_time:, type:, special_id: '>', is_stop: false, &execution_block)
         raise ArgumentError, "Parameter 'type' #{type} is wrong." unless [:regular, :dead_letter].include?(type)
 
         setup_group(topic: topic, group: group)
@@ -332,9 +290,9 @@ module Pistonqueue
                     payload = JSON.parse(data["payload"])
 
                     if type == :dead_letter
-                      worker_block.call(id, payload["original_id"], payload['original_data'], payload['error'], payload['failed_at'])
+                      execution_block.call(id, payload["original_id"], payload['original_data'], payload['error'], payload['failed_at'])
                     else
-                      worker_block.call(id, payload)
+                      execution_block.call(id, payload)
                     end
 
                     # acknowledge the data so that it is not sent again to the consumer.
@@ -348,6 +306,100 @@ module Pistonqueue
 
             break if is_stop
           end
+        end
+      end
+
+      # method description : running business logic for retry consumers.
+      # parameters :
+      # - topic : target 'topic' to be sent, for example : 'topic_io'.
+      # - message_id : is the unique identity of the message you just finished working on, example : '1707241234567-0'.
+      # - payload : data from redis stream, for example : { order_id: 'xyz-1', total_payment: 250000 }.
+      def retry_process_consumer(topic:, message_id:, payload:, &execution_block)
+        max_retry = @config.max_retry.to_i
+
+        begin
+          # tier 2: exponential backoff retry process with jitter outside the main consumer.
+          retry_with_exponential_backoff_jitter(max_retries: max_retry) do
+            execution_block.call(payload)
+          end
+
+          logger.info("✅ retry consumer with [#{topic}] id: #{message_id} success.")
+        rescue => ex
+          error_msg = ex.message
+          previous_topic = topic.sub('_retry', '')
+
+          # tier 3: dead letter queue (permanent failure).
+          move_to_dlq(dlq_topic: "#{previous_topic}_dlq", original_message_id: message_id, original_data: payload.to_json, error_message: error_msg)
+          
+          logger.error("💀 retry consumer with [#{previous_topic}] max retries reached, moved to #{previous_topic}_dlq topic.")
+        end
+      end
+
+      # method description : running business logic for main consumers.
+      # parameters :
+      # - topic : target 'topic' to be sent, for example : 'topic_io'.
+      # - message_id : is the unique identity of the message you just finished working on, example : '1707241234567-0'.
+      # - payload : data from redis stream, for example : { order_id: 'xyz-1', total_payment: 250000 }.
+      def main_process_consumer(topic:, message_id:, payload:, &execution_block)
+        max_local_retry = @config.max_local_retry.to_i
+        total_trials = 0
+
+        begin
+          # tier 1: retry with exponential backoff and jitter at the consumer level.
+          retry_with_exponential_backoff_jitter(max_retries: max_local_retry) do
+            total_trials += 1
+            execution_block.call(payload)
+          end
+
+          logger.info("✅ main consumer with [#{topic}] id: #{message_id} success.")
+        rescue => ex
+          # do a retry outside the consumer.
+          produce(topic: "#{topic}_retry", data: payload)
+
+          logger.warn("🔄 main consumer with [#{topic}] failed. moved to #{topic}_retry topic (total trials : #{total_trials}).")
+        end
+      end
+
+      # method description : running business logic for dead letter consumers.
+      # parameters :
+      # - topic : target 'topic' to be sent, for example : 'topic_io'.
+      # - message_id : is the unique identity of the message you just finished working on, example : '1707241234567-0'.
+      # - original_id : message id of the previous failed retry process, example : '1707241234578-0'.
+      # - original_data : data from a previously failed retry process, for example : "{\"order_id\":\"xyz-1\",\"total_payment\":250000}".
+      # - err_msg : error message from a previously failed retry process, for example : 'no implicit conversion of Symbol into Integer (TypeError)'.
+      # - failed_at : failure time of the previous failed retry process, for example : '2026-02-16 19:43:13 +0700'.
+      def dead_letter_process_consumer(topic:, message_id:, original_id:, original_data:, err_msg:, failed_at:, &execution_block)
+        begin
+          retry_with_exponential_backoff_jitter(max_retries: 1) do
+            execution_block.call(original_id, original_data, err_msg, failed_at)
+          end
+
+          logger.info("✅ dead_letter [#{topic}] id: #{message_id} success.")
+        rescue => ex
+          error_msg = ex.message
+          previous_topic = topic.sub('_dlq', '')
+
+          logger.error("💀 dead_letter [#{topic}] max retries reached, moved to #{previous_topic}_dlq_archive topic.")
+
+          move_to_dlq(dlq_topic: "#{previous_topic}_dlq_archive", original_message_id: message_id, original_data: original_data, error_message: error_msg)
+        end
+      end
+
+      # method description : running business logic for dead letter archive consumers.
+      # parameters :
+      # - topic : target 'topic' to be sent, for example : 'topic_io'.
+      # - message_id : is the unique identity of the message you just finished working on, example : '1707241234567-0'.
+      # - original_id : message id of the previous failed retry process, example : '1707241234578-0'.
+      # - original_data : data from a previously failed retry process, for example : "{\"order_id\":\"xyz-1\",\"total_payment\":250000}".
+      # - err_msg : error message from a previously failed retry process, for example : 'no implicit conversion of Symbol into Integer (TypeError)'.
+      # - failed_at : failure time of the previous failed retry process, for example : '2026-02-16 19:43:13 +0700'.
+      def dead_letter_archive_process_consumer(topic:, message_id:, original_id:, original_data:, err_msg:, failed_at:, &execution_block)
+        begin
+          execution_block.call(original_id, original_data, err_msg, failed_at)
+
+          logger.info("✅ dead_letter_archive [#{topic}] id: #{message_id} success.")
+        rescue => ex
+          logger.error("💀 dead_letter_archive [#{topic}] failed to process.")
         end
       end
   end
