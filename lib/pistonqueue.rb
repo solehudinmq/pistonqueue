@@ -39,7 +39,6 @@ module Pistonqueue
     # method description : driver initialization.
     # parameters :
     # - driver : selected producer mechanism, for example : :redis_stream.
-    # - config : env value settings from client.
     # how to use :
     #   producer = Pistonqueue::Producer.new(driver: :redis_stream, config: Pistonqueue.configuration)
     def initialize(driver:)
@@ -64,9 +63,8 @@ module Pistonqueue
     # method description : driver initialization.
     # parameters :
     # - driver : selected consumer mechanism, for example : :redis_stream.
-    # - config : env value settings from client.
     # how to use :
-    #   consumer = Pistonqueue::Consumer.new(driver: :redis_stream, config: Pistonqueue.configuration)
+    #   consumer = Pistonqueue::Consumer.new(driver: :redis_stream)
     def initialize(driver:)
       @config = Pistonqueue.configuration
       @driver = init_driver(driver: driver, config: @config)
@@ -117,9 +115,8 @@ module Pistonqueue
     # method description : driver initialization.
     # parameters :
     # - driver : selected dead letter mechanism, for example : :redis_stream.
-    # - config : env value settings from client.
     # how to use :
-    #   dlq_consumer = Pistonqueue::DlqConsumer.new(driver: :redis_stream, config: Pistonqueue.configuration)
+    #   dlq_consumer = Pistonqueue::DlqConsumer.new(driver: :redis_stream)
     def initialize(driver:)
       @config = Pistonqueue.configuration
       @driver = init_driver(driver: driver, config: @config)
@@ -169,10 +166,9 @@ module Pistonqueue
 
     # method description : driver initialization.
     # parameters :
-    # - driver : selected dead letter mechanism, for example : :redis_stream.
-    # - config : env value settings from client.
+    # - driver : selected recovery mechanism, for example : :redis_stream.
     # how to use :
-    #   recovery_consumer = Pistonqueue::DlqConsumer.new(driver: :redis_stream, config: Pistonqueue.configuration)
+    #   recovery_consumer = Pistonqueue::RecoveryConsumer.new(driver: :redis_stream)
     def initialize(driver:)
       @config = Pistonqueue.configuration
       @driver = init_driver(driver: driver, config: @config)
