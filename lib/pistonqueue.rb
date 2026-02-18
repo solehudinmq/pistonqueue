@@ -4,6 +4,7 @@ require_relative "pistonqueue/version"
 require_relative "pistonqueue/driver"
 require_relative "pistonqueue/configuration"
 require_relative "pistonqueue/utils/unit_execution"
+require_relative "pistonqueue/utils/request_validator"
 
 module Pistonqueue
   class << self
@@ -59,6 +60,7 @@ module Pistonqueue
   class Consumer
     include Pistonqueue::Driver
     include Pistonqueue::UnitExecution
+    include Pistonqueue::RequestValidator
 
     # method description : driver initialization.
     # parameters :
@@ -84,33 +86,19 @@ module Pistonqueue
       @driver.consume(
         topic: topic, 
         fiber_limit: fetch_fiber_limit(config: @config, task_type: task_type), 
-        is_retry: fetch_is_retry(is_retry: options[:is_retry] || false), 
-        is_stop: fetch_is_stop(is_stop: options[:is_stop]),
+        is_retry: enabled?(parameter_name: 'is_retry', value: options[:is_retry] || false), 
+        is_stop: enabled?(parameter_name: 'is_stop', value: options[:is_stop] || false),
         options: options
       ) do |payload|
         service_block.call(payload)
       end
     end
-
-    private
-      def fetch_is_retry(is_retry: false)
-        raise ArgumentError, "The 'is_retry' parameter must be a boolean." unless [true, false].include?(is_retry)
-
-        is_retry
-      end
-
-      def fetch_is_stop(is_stop: false)
-        if is_stop != true
-          is_stop = false
-        end
-
-        is_stop
-      end
   end
 
   class DlqConsumer
     include Pistonqueue::Driver
     include Pistonqueue::UnitExecution
+    include Pistonqueue::RequestValidator
 
     # method description : driver initialization.
     # parameters :
@@ -136,33 +124,19 @@ module Pistonqueue
       @driver.dead_letter(
         topic: topic, 
         fiber_limit: fetch_fiber_limit(config: @config, task_type: task_type), 
-        is_archive: fetch_is_archive(is_archive: options[:is_archive] || false), 
-        is_stop: fetch_is_stop(is_stop: options[:is_stop]),
+        is_archive: enabled?(parameter_name: 'is_archive', value: options[:is_archive] || false), 
+        is_stop: enabled?(parameter_name: 'is_stop', value: options[:is_stop] || false),
         options: options
       ) do |original_id, original_data, err_msg, failed_at|
         service_block.call(original_id, original_data, err_msg, failed_at)
       end
     end
-
-    private
-      def fetch_is_archive(is_archive: false)
-        raise ArgumentError, "The 'is_archive' parameter must be a boolean." unless [true, false].include?(is_archive)
-
-        is_archive
-      end
-
-      def fetch_is_stop(is_stop: false)
-        if is_stop != true
-          is_stop = false
-        end
-
-        is_stop
-      end
   end
 
   class RecoveryConsumer
     include Pistonqueue::Driver
     include Pistonqueue::UnitExecution
+    include Pistonqueue::RequestValidator
 
     # method description : driver initialization.
     # parameters :
@@ -188,6 +162,7 @@ module Pistonqueue
       @driver.reclaim(
         topic: topic, 
         fiber_limit: fetch_fiber_limit(config: @config, task_type: task_type), 
+        is_stop: enabled?(parameter_name: 'is_stop', value: options[:is_stop] || false),
         options: options, 
         service_block: service_block
       )
