@@ -101,11 +101,12 @@ module Pistonqueue
     # parameters :
     # - topic : target 'topic' to be sent, for example : 'topic_io'.
     # - fiber_limit : maximum total fiber, for example : 500.
+    # - is_stop : make sure the value is always 'false' when running in production, because this is only used to stop unit tests, for example : false / true.
     # - options : additional parameters to support how the consumer driver works, for example : { group: 'group-1', consumer: 'consumer-1' }.
-    def reclaim(topic:, fiber_limit:, options: {}, service_block:)
+    def reclaim(topic:, fiber_limit:, is_stop: false, options: {}, &execution_block)
       group, consumer = fetch_group_and_consumer(options: options)
 
-      logger.info("🚀 Reclaim consumer #{consumer} started on topic [#{topic}, #{topic}_retry, #{topic}_dlq], with fiber limit : #{fiber_limit}.")
+      logger.info("🚀 reclaim consumer #{consumer} started on topic [#{topic}, #{topic}_retry, #{topic}_dlq], with fiber limit : #{fiber_limit}.")
 
       setup_group(topic: topic, group: group)
 
@@ -115,84 +116,32 @@ module Pistonqueue
         loop do
           # reclaim data on <your-topic>.
           task.async do
-            begin
-              main_messages = @redis_pool.with do |conn|
-                conn.xautoclaim(topic, group, consumer, 30000, '0-0', count: @config.redis_batch_size.to_i) # read stuck messages from redis stream as part of a consumer group.
+            recover_pending_message(topic: topic, group: group, consumer: consumer, fiber_limit: fiber_limit, task: task, type: :regular, is_stop: is_stop) do |message_id, payload|
+              main_process_consumer(topic: topic, message_id: message_id, payload: payload) do |data_payload|
+                execution_block.call(data_payload)
               end
-
-              next task.sleep(5) if main_messages.nil? || main_messages.empty?
-
-              main_messages.each do |_stream, entries|
-                entries.each do |id, data|
-                  semaphore.async do
-                    payload = JSON.parse(data["payload"])
-
-                    execute(topic: topic, message_id: id, payload: payload, service_block: service_block)
-
-                    # acknowledge the data so that it is not sent again to the consumer.
-                    acknowledge(topic: topic, group: group, message_id: id)
-                  end
-                end
-              end
-            rescue => e
-              logger.error("Reclaim - main consumer #{consumer} on topic [#{topic}] error : #{e.message}.")
             end
           end
 
           # reclaim data on <your-topic>_retry.
           task.async do
-            retry_topic = "#{topic}_retry"
-            begin
-              retry_messages = @redis_pool.with do |conn|
-                conn.xautoclaim(retry_topic, group, consumer, 30000, '0-0', count: @config.redis_batch_size.to_i) # read stuck messages from redis stream as part of a consumer group.
+            recover_pending_message(topic: topic, group: group, consumer: consumer, fiber_limit: fiber_limit, task: task, type: :regular, is_stop: is_stop) do |message_id, payload|
+              retry_process_consumer(topic: topic, message_id: message_id, payload: payload) do |data_payload|
+                execution_block.call(data_payload)
               end
-
-              next task.sleep(5) if retry_messages.nil? || retry_messages.empty?
-
-              retry_messages.each do |_stream, entries|
-                entries.each do |id, data|
-                  semaphore.async do
-                    payload = JSON.parse(data["payload"])
-
-                    retry_execute(topic: retry_topic, message_id: id, payload: payload, service_block: service_block)
-
-                    # acknowledge the data so that it is not sent again to the consumer.
-                    acknowledge(topic: retry_topic, group: group, message_id: id)
-                  end
-                end
-              end
-            rescue => e
-              logger.error("Reclaim - retry consumer #{consumer} on topic [#{retry_topic}] error : #{e.message}.")
             end
           end
 
           # reclaim data on <your-topic>_dlq.
           task.async do
-            dead_letter_topic = "#{topic}_dlq"
-            begin
-              dead_letter_messages = @redis_pool.with do |conn|
-                conn.xautoclaim(dead_letter_topic, group, consumer, 30000, '0-0', count: @config.redis_batch_size.to_i) # read stuck messages from redis stream as part of a consumer group.
+            recover_pending_message(topic: topic, group: group, consumer: consumer, fiber_limit: fiber_limit, task: task, type: :dead_letter, is_stop: is_stop) do |message_id, original_id, original_data, err_msg, failed_at|
+              dead_letter_process_consumer(topic: topic, message_id: message_id, original_id: original_id, original_data: original_data, err_msg: err_msg, failed_at: failed_at) do |id, data, err, err_at|
+                execution_block.call(id, data, err, err_at)
               end
-
-              next task.sleep(5) if dead_letter_messages.nil? || dead_letter_messages.empty?
-
-              dead_letter_messages.each do |_stream, entries|
-                entries.each do |id, data|
-                  semaphore.async do
-                    payload = JSON.parse(data["payload"])
-
-                    dead_letter_execute(topic: dead_letter_topic, message_id: id, payload: payload, service_block: service_block)
-                    
-                    acknowledge(topic: dead_letter_topic, group: group, message_id: id)
-                  end
-                end
-              end
-            rescue => e
-              logger.error("Reclaim - dead letter consumer #{consumer} on topic [#{dead_letter_topic}] error : #{e.message}.")
             end
           end
 
-          break if options[:is_stop]
+          break if is_stop
         end
       end
     end
@@ -400,6 +349,46 @@ module Pistonqueue
           logger.info("✅ dead_letter_archive [#{topic}] id: #{message_id} success.")
         rescue => ex
           logger.error("💀 dead_letter_archive [#{topic}] failed to process.")
+        end
+      end
+
+      # method description : running business logic for the implicated data.
+      # parameters :
+      # - topic : target 'topic' to be sent, for example : 'topic_io'.
+      # - group : a mechanism that allows multiple workers (consumers) to share the workload of the same stream, for example : 'group-1'.
+      # - consumer : specific name for each instance of your consumer application, for example : 'consumer-1'.
+      # - fiber_limit : fiber_limit : maximum total fiber, for example : 500.
+      # - type : the type of consumer logic that is executed, for example : :regular / :dead_letter.
+      # - task : is a method of async task.
+      # - is_stop : make sure the value is always 'false' when running in production, because this is only used to stop unit tests, for example : false / true.
+      def recover_pending_message(topic:, group:, consumer:, fiber_limit:, type:, task:, is_stop:, &execution_block)
+        raise ArgumentError, "Parameter 'type' #{type} is wrong." unless [:regular, :dead_letter].include?(type)
+        
+        begin
+          messages = @redis_pool.with do |conn|
+            conn.xautoclaim(topic, group, consumer, 30000, '0-0', count: @config.redis_batch_size.to_i) # read stuck messages from redis stream as part of a consumer group.
+          end
+
+          return task.sleep(5) if messages.nil? || messages.empty?
+
+          messages.each do |_stream, entries|
+            entries.each do |id, data|
+              semaphore.async do
+                payload = JSON.parse(data["payload"])
+
+                if type == :dead_letter
+                  execution_block.call(id, payload["original_id"], payload['original_data'], payload['error'], payload['failed_at'])
+                else
+                  execution_block.call(id, payload)
+                end
+
+                # acknowledge the data so that it is not sent again to the consumer.
+                acknowledge(topic: topic, group: group, message_id: id)
+              end
+            end
+          end
+        rescue => e
+          logger.error("reclaim consumer #{consumer} on topic [#{topic}] error : #{e.message}.")
         end
       end
   end
