@@ -185,9 +185,61 @@ For more details, you can see the following example :
 
 Note: if the dead letter process still fails, the data will be saved in the topic `<topic-name>_dlq_archive`.
 
+### Handle Data Stuck
+In unpredictable situations (e.g., if redis is down), the data can be categorized as stuck. To retrieve and process this data, we can do the following :
+
+1. data stuck when the main or retry consumer process is carried out, here's an example :
+
+```ruby
+require 'pistonqueue'
+
+require_relative 'config'
+
+recovery = ::Pistonqueue::RecoveryConsumer.new(driver: <your-driver>)
+recovery.perform(topic: <your-topic>, task_type: <your-task-type>, is_retry: <your-is-retry>, group: <your-group>, consumer: <your-consumer>) do |data|
+  # your logic here
+end
+```
+
+Parameter description :
+- driver : types of message brokers for implementing back pressure, for example : :redis_stream.
+- topic : target 'topic' to send data to the message broker, for example : 'topic_io'.
+- task_type : the type of task that will be performed on the consumer, for example: :io_bound_light / :io_bound_medium / :io_bound_heavy / :cpu_bound.
+- is_retry : this consumer is intended for retry or main process, for example : true / false.
+- group : grouping multiple workers to work on the same data stream (topic) without competing for messages, for example : 'group_io'.
+- consumer : provides a unique identity to each application instance or thread you run, for example : 'consumer_io'.
+
+For more details, you can see the following example : 
+- pending data in the main process : [example/simulations/consumer_pending.rb](https://github.com/solehudinmq/pistonqueue/blob/development/example/simulations/consumer_pending.rb).
+- pending data in the retry process : [example/simulations/consumer_pending_retry.rb](https://github.com/solehudinmq/pistonqueue/blob/development/example/simulations/consumer_pending_retry.rb).
+
+2. data stuck when the consumer dead letter process is carried out, here's an example :
+
+```ruby
+require 'pistonqueue'
+
+require_relative 'config'
+
+recovery = ::Pistonqueue::RecoveryConsumer.new(driver: <your-driver>)
+recovery.dead_letter_perform(topic: <your-topic>, task_type: <your-task-type>, group: <your-group>, consumer: <your-consumer>) do |original_id, original_data, error, failed_at|
+  # your logic here
+end
+```
+
+Parameter description :
+- driver : types of message brokers for implementing back pressure, for example : :redis_stream.
+- topic : target 'topic' to send data to the message broker, for example : 'topic_io'.
+- task_type : the type of task that will be performed on the consumer, for example: :io_bound_light / :io_bound_medium / :io_bound_heavy / :cpu_bound.
+- group : grouping multiple workers to work on the same data stream (topic) without competing for messages, for example : 'group_io'.
+- consumer : provides a unique identity to each application instance or thread you run, for example : 'consumer_io'.
+
+For more details, you can see the following example : [example/simulations/consumer_pending_dead_letter.rb](https://github.com/solehudinmq/pistonqueue/blob/development/example/simulations/consumer_pending_dead_letter.rb).
+
 ## How to do a Stress Test
 
-Make sure 'consumer' is running in the systemd service, then to send a lot of data to the message broker, you can follow these steps : [example/run_producer.txt](https://github.com/solehudinmq/pistonqueue/blob/development/example/run_producer.txt).
+Make sure 'consumer' is running in the systemd service, then to send a lot of data to the message broker, you can follow these steps : 
+- normal flow : [example/run_producer.txt](https://github.com/solehudinmq/pistonqueue/blob/development/example/run_producer.txt).
+- flow data stuck : [example/run_producer_pending.txt](https://github.com/solehudinmq/pistonqueue/blob/development/example/run_producer_pending.txt).
 
 or if you want to do it on localhost only, here's an example : [example/test_on_localhost.txt](https://github.com/solehudinmq/pistonqueue/blob/development/example/test_on_localhost.txt).
 

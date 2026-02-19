@@ -1,0 +1,92 @@
+1. running data on the main topic stuck in redis via systemd :
+- create a new service : 
+  a. open terminal
+  b. cd /etc/systemd/system
+  c. which bundler # bundler-installation-location
+  d. which ruby # ruby-installation-location
+  e. sudo nano pending-consumer.service
+  f. Fill in 'pending-consumer.service' according to the file 'example/services/pending-consumer.service'
+  g. sudo systemctl daemon-reload
+  h. sudo systemctl enable pending-consumer.service
+  i. sudo systemctl start pending-consumer.service
+  j. sudo systemctl status pending-consumer.service
+  k. sudo journalctl -u pending-consumer.service -f
+
+- restart service if there are changes in the file :
+  a. open terminal
+  b. cd /etc/systemd/system
+  c. sudo nano pending-consumer.service
+  d. add changes in 'pending-consumer.service' file.
+  e. sudo systemctl daemon-reload
+  f. sudo systemctl restart pending-consumer.service
+  g. sudo systemctl status pending-consumer.service
+  h. sudo journalctl -u pending-consumer.service
+
+- delete service :
+  a. open terminal
+  b. cd /etc/systemd/system
+  c. sudo systemctl stop pending-consumer.service
+  d. sudo systemctl disable pending-consumer.service
+  e. sudo rm -rf pending-consumer.service
+
+2. running data on the retry topic stuck in redis via systemd :
+- create a new service : 
+  a. open terminal
+  b. cd /etc/systemd/system
+  c. which bundler # bundler-installation-location
+  d. which ruby # ruby-installation-location
+  e. sudo nano retry-pending-consumer.service
+  f. Fill in 'retry-pending-consumer.service' according to the file 'example/services/retry-pending-consumer.service'
+  g. sudo systemctl daemon-reload
+  h. sudo systemctl enable retry-pending-consumer.service
+  i. sudo systemctl start retry-pending-consumer.service
+  j. sudo systemctl status retry-pending-consumer.service
+  k. sudo journalctl -u retry-pending-consumer.service -f
+
+- restart service if there are changes in the file :
+  a. open terminal
+  b. cd /etc/systemd/system
+  c. sudo nano retry-pending-consumer.service
+  d. add changes in 'retry-pending-consumer.service' file.
+  e. sudo systemctl daemon-reload
+  f. sudo systemctl restart retry-pending-consumer.service
+  g. sudo systemctl status retry-pending-consumer.service
+  h. sudo journalctl -u retry-pending-consumer.service
+
+- delete service :
+  a. open terminal
+  b. cd /etc/systemd/system
+  c. sudo systemctl stop retry-pending-consumer.service
+  d. sudo systemctl disable retry-pending-consumer.service
+  e. sudo rm -rf retry-pending-consumer.service
+
+3. running data on the dead letter topic stuck in redis via systemd :
+- create a new service : 
+  a. open terminal
+  b. cd /etc/systemd/system
+  c. which bundler # bundler-installation-location
+  d. which ruby # ruby-installation-location
+  e. sudo nano dead-letter-pending-consumer.service
+  f. Fill in 'dead-letter-pending-consumer.service' according to the file 'example/services/dead-letter-pending-consumer.service'
+  g. sudo systemctl daemon-reload
+  h. sudo systemctl enable dead-letter-pending-consumer.service
+  i. sudo systemctl start dead-letter-pending-consumer.service
+  j. sudo systemctl status dead-letter-pending-consumer.service
+  k. sudo journalctl -u dead-letter-pending-consumer.service -f
+
+- restart service if there are changes in the file :
+  a. open terminal
+  b. cd /etc/systemd/system
+  c. sudo nano dead-letter-pending-consumer.service
+  d. add changes in 'dead-letter-pending-consumer.service' file.
+  e. sudo systemctl daemon-reload
+  f. sudo systemctl restart dead-letter-pending-consumer.service
+  g. sudo systemctl status dead-letter-pending-consumer.service
+  h. sudo journalctl -u dead-letter-pending-consumer.service
+
+- delete service :
+  a. open terminal
+  b. cd /etc/systemd/system
+  c. sudo systemctl stop dead-letter-pending-consumer.service
+  d. sudo systemctl disable dead-letter-pending-consumer.service
+  e. sudo rm -rf dead-letter-pending-consumer.service

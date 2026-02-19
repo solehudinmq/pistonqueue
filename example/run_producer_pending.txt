@@ -1,0 +1,29 @@
+run the main application (required) :
+- open terminal
+- cd example
+- bundle install
+- bundle exec ruby app.rb
+
+================= [ run the consumer in systemd by following the steps in : 'example/run_consumer_pending_in_systemd.txt' ] =================
+1. pending-consumer.service
+2. retry-pending-consumer.service
+3. dead-letter-pending-consumer.service
+
+================= [ To try the test case, select one of the cases below and follow the steps ] =================
+1. case for running data stuck in main consumer :
+  - open a new tab terminal
+  - cd example/simulations
+  - bundle install
+  - bundle exec ruby producer_pending.rb topic_io_medium 5000
+
+2. case for running data stuck in retry consumer :
+  - open a new tab terminal
+  - cd example/simulations
+  - bundle install
+  - bundle exec ruby producer_pending.rb topic_io_medium_retry 5000
+
+3. case for running data stuck in dead letter consumer :
+  - open a new tab terminal
+  - cd example/simulations
+  - bundle install
+  - bundle exec ruby producer_pending.rb topic_io_medium_dlq 5000

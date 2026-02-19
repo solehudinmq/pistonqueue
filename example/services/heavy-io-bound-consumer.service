@@ -21,6 +21,7 @@ Environment=MAX_RETRY=3
 Environment=MAXLEN=50000
 Environment=CONNECTION_POOL_SIZE=10
 Environment=CONNECTION_TIMEOUT=3
+Environment=REDIS_MIN_IDLE_TIME=5000
 
 ExecStartPre=/home/blackedet/.local/share/mise/installs/ruby/3.4.5/bin/bundle install
 ExecStart=/home/blackedet/.local/share/mise/installs/ruby/3.4.5/bin/bundle exec ruby consumer_3.rb

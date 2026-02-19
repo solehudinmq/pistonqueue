@@ -1,5 +1,5 @@
 [Unit]
-Description=Dead Letter Consumer
+Description=Dead Letter Pending Consumer
 After=network.target redis.service
 
 [Service]
@@ -24,7 +24,7 @@ Environment=CONNECTION_TIMEOUT=3
 Environment=REDIS_MIN_IDLE_TIME=5000
 
 ExecStartPre=/home/blackedet/.local/share/mise/installs/ruby/3.4.5/bin/bundle install
-ExecStart=/home/blackedet/.local/share/mise/installs/ruby/3.4.5/bin/bundle exec ruby consumer_dead_letter.rb
+ExecStart=/home/blackedet/.local/share/mise/installs/ruby/3.4.5/bin/bundle exec ruby consumer_pending_dead_letter.rb
 
 Restart=always
 RestartSec=5
