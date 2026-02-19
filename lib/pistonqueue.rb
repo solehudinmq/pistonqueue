@@ -41,7 +41,7 @@ module Pistonqueue
     # parameters :
     # - driver : selected producer mechanism, for example : :redis_stream.
     # how to use :
-    #   producer = Pistonqueue::Producer.new(driver: :redis_stream, config: Pistonqueue.configuration)
+    #   producer = Pistonqueue::Producer.new(driver: :redis_stream)
     def initialize(driver:)
       @driver = init_driver(driver: driver, config: Pistonqueue.configuration)
     end
