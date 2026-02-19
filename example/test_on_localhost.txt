@@ -156,3 +156,37 @@ run the main application (required) :
   b. cd example
   c. bundle install
   d. curl --location 'http://127.0.0.1:4567/orders?page=1'
+
+9. case of processing the data involved and processing it in the retry way : 
+- run consumer 1 : 
+  a. open a new tab terminal
+  b. cd example/simulations
+  c. bundle install
+  d. bundle exec ruby consumer_pending_retry.rb
+- run producer : 
+  a. open a new tab terminal
+  b. cd example/simulations
+  c. bundle install
+  d. bundle exec ruby producer_pending.rb topic_io_medium_retry 5000
+- view data on orders that have been successfully created :
+  a. open a new tab terminal
+  b. cd example
+  c. bundle install
+  d. curl --location 'http://127.0.0.1:4567/orders?page=1'
+
+10. case of processing the data involved and processing it in the dead letter way : 
+- run consumer 1 : 
+  a. open a new tab terminal
+  b. cd example/simulations
+  c. bundle install
+  d. bundle exec ruby consumer_pending_dead_letter.rb
+- run producer : 
+  a. open a new tab terminal
+  b. cd example/simulations
+  c. bundle install
+  d. bundle exec ruby producer_pending.rb topic_io_medium_dlq 5000
+- view data on orders that have been successfully created :
+  a. open a new tab terminal
+  b. cd example
+  c. bundle install
+  d. curl --location 'http://127.0.0.1:4567/orders?page=1'
