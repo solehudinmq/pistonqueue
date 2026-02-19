@@ -148,7 +148,7 @@ module Pistonqueue
       @driver = init_driver(driver: driver, config: @config)
     end
 
-    # method description : receive data from topics, and process it with concurrency based on task type.
+    # method description : receive the main / retry data that is stuck, and process it with concurrency.
     # parameters :
     # - topic : target 'topic' to be sent.
     # - task_type : 'task_type' to determine how to handle concurrency, for example : :io_bound_light / :io_bound_medium / :io_bound_heavy / :cpu_bound.
@@ -162,10 +162,33 @@ module Pistonqueue
       @driver.reclaim(
         topic: topic, 
         fiber_limit: fetch_fiber_limit(config: @config, task_type: task_type), 
+        is_retry: enabled?(parameter_name: 'is_retry', value: options[:is_retry] || false),
         is_stop: enabled?(parameter_name: 'is_stop', value: options[:is_stop] || false),
-        options: options, 
-        service_block: service_block
-      )
+        options: options
+      ) do |payload|
+        service_block.call(payload)
+      end
+    end
+
+    # method description : receive the dead letter data that is stuck, and process it with concurrency.
+    # parameters :
+    # - topic : target 'topic' to be sent.
+    # - task_type : 'task_type' to determine how to handle concurrency, for example : :io_bound_light / :io_bound_medium / :io_bound_heavy / :cpu_bound.
+    # - **options : additional parameters to support how the consumer driver works.
+    # - &service_block : explicit block parameter.
+    # how to use :
+    # recovery_consumer.dead_letter_perform(topic: 'topic_io', task_type: :io_bound_heavy, group: 'group-1', consumer: 'consumer-1') do |data|
+    #   # your logic here
+    # end
+    def dead_letter_perform(topic:, task_type: :io_bound_medium, **options, &service_block)
+      @driver.dead_letter_reclaim(
+        topic: topic, 
+        fiber_limit: fetch_fiber_limit(config: @config, task_type: task_type), 
+        is_stop: enabled?(parameter_name: 'is_stop', value: options[:is_stop] || false),
+        options: options
+      ) do |original_id, original_data, err_msg, failed_at|
+        service_block.call(original_id, original_data, err_msg, failed_at)
+      end
     end
   end
 end
