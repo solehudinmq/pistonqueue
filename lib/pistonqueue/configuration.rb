@@ -1,6 +1,6 @@
 module Pistonqueue
   class Configuration
-    attr_accessor :io_light_fiber, :io_medium_fiber, :io_heavy_fiber, :cpu_fiber, :redis_url, :redis_block_duration, :redis_batch_size, :max_local_retry, :max_retry, :maxlen, :connection_pool_size, :connection_timeout
+    attr_accessor :io_light_fiber, :io_medium_fiber, :io_heavy_fiber, :cpu_fiber, :redis_url, :redis_block_duration, :redis_batch_size, :max_local_retry, :max_retry, :maxlen, :connection_pool_size, :connection_timeout, :redis_min_idle_time
 
     def initialize
       @io_light_fiber = 500
@@ -15,6 +15,7 @@ module Pistonqueue
       @maxlen = 10000 # limits the maximum number of messages (entries) stored in a single stream.
       @connection_pool_size = 5 # number of connection pools.
       @connection_timeout = 1 # connection timeout time in seconds.
+      @redis_min_idle_time = 5000 # retrieve messages that have been in the pending list for at least x millisecond.
     end
   end
 end

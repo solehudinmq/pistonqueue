@@ -72,6 +72,7 @@ require 'pistonqueue'
   config.maxlen = <your-value> # default value : 10000
   config.connection_pool_size = <your-value> # default value : 5
   config.connection_timeout = <your-value> # default value : 1
+  config.redis_min_idle_time = <your-value> # default value : 10000
 end
 ```
 
@@ -88,6 +89,7 @@ Parameter description :
 - maxlen : if the number of messages has reached the maxlen limit, redis will automatically delete the oldest messages so that new messages can enter, recommendation : small/medium : 10000-50000 / high traffic : 100000 - 500000 / log/audit trail : 1000000+.
 - connection_pool_size : the maximum number of connections that the pool can open and keep alive (persistent).
 - connection_timeout : the maximum duration (in seconds) a thread is willing to wait/queue until a connection is available.
+- redis_min_idle_time : retrieve messages that have been in the pending list for at least x millisecond, recommendation : 10000-30000.
 
 For more details, you can see the following example : [example/config.rb](https://github.com/solehudinmq/pistonqueue/blob/development/example/config.rb).
 

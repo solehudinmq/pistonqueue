@@ -139,7 +139,9 @@ module Pistonqueue
     def dead_letter_reclaim(topic:, fiber_limit:, is_stop: false, options: {}, &execution_block)
       group, consumer = fetch_group_and_consumer(options: options)
 
-      logger.info("🚀 dead letter reclaim consumer #{consumer} started on topic [#{topic}_dlq], with fiber limit : #{fiber_limit}.")
+      topic = "#{topic}_dlq"
+
+      logger.info("🚀 dead letter reclaim consumer #{consumer} started on topic [#{topic}], with fiber limit : #{fiber_limit}.")
 
       recover_pending_message(topic: topic, group: group, consumer: consumer, fiber_limit: fiber_limit, type: :dead_letter, is_stop: is_stop) do |message_id, original_id, original_data, err_msg, failed_at|
         dead_letter_process_consumer(topic: topic, message_id: message_id, original_id: original_id, original_data: original_data, err_msg: err_msg, failed_at: failed_at) do |id, data, err, err_at|
@@ -373,16 +375,18 @@ module Pistonqueue
           loop do
             begin
               messages = @redis_pool.with do |conn|
-                conn.xautoclaim(topic, group, consumer, 30000, '0-0', count: @config.redis_batch_size.to_i) # read stuck messages from redis stream as part of a consumer group.
+                conn.xautoclaim(topic, group, consumer, @config.redis_min_idle_time.to_i, '0-0', count: @config.redis_batch_size.to_i) # read stuck messages from redis stream as part of a consumer group.
               end
-
+              
               next task.sleep(5) if messages.nil? || messages.empty?
 
-              messages.each do |_stream, entries|
-                entries.each do |id, data|
+              result = messages["entries"] || []
+
+              if result.any?
+                result.each do |id, data|
                   semaphore.async do
                     payload = JSON.parse(data["payload"])
-
+                    
                     if type == :dead_letter
                       execution_block.call(id, payload["original_id"], payload['original_data'], payload['error'], payload['failed_at'])
                     else
