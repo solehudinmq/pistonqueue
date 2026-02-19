@@ -127,7 +127,8 @@ How to make 'consumer' run in systemd service : [example/run_consumer_in_systemd
 
 Note: 
 - if the main process fails, the data will be saved in the topic `<topic-name>_retry`.
-- if the retry process outside the main consumer still fails, the data will be sent to the topic. `<topic-name>_dlq`.
+- if the retry process outside the main consumer still fails, the data will be sent to the topic `<topic-name>_dlq`.
+- if the consumer crashes, the data will go to xpending.
 
 ### Producer
 
