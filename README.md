@@ -9,11 +9,11 @@ Currently, the available message broker mechanisms are :
 
 Potential problems if our application is unable to handle backpressure issues :
 
-![Logo Ruby](https://github.com/solehudinmq/pistonqueue/blob/development/high_flow/pistonqueue-problem.jpg)
+![Logo Ruby](./high_flow/pistonqueue-problem.jpg)
 
 With pistonqueue, our application is now able to handle as many requests as possible :
 
-![Logo Ruby](https://github.com/solehudinmq/pistonqueue/blob/development/high_flow/pistonqueue-solution-redis-stream.jpg)
+![Logo Ruby](./high_flow/pistonqueue-solution-redis-stream.jpg)
 
 ## Requirement
 
@@ -49,7 +49,7 @@ bundle install
 
 ### Redis Setup (optional)
 
-Make redis so that it can save on disk, in case the server dies or crashes. For more details, you can see the following example : [example/redis_disk.txt](https://github.com/solehudinmq/pistonqueue/blob/development/example/redis_disk.txt).
+Make redis so that it can save on disk, in case the server dies or crashes. For more details, you can see the following example : [example/redis_disk.txt](./example/redis_disk.txt)
 
 ### Library Setup
 
@@ -91,7 +91,7 @@ Parameter description :
 - connection_timeout : the maximum duration (in seconds) a thread is willing to wait/queue until a connection is available.
 - redis_min_idle_time : retrieve messages that have been in the pending list for at least x millisecond, recommendation : 10000-30000.
 
-For more details, you can see the following example : [example/config.rb](https://github.com/solehudinmq/pistonqueue/blob/development/example/config.rb).
+For more details, you can see the following example : [example/config.rb](./example/config.rb).
 
 ### Consumer
 
@@ -117,13 +117,13 @@ Parameter description :
 - consumer : provides a unique identity to each application instance or thread you run, for example : 'consumer_io'.
 
 For more details, you can see the following example : 
-- consumer for light i/o bound tasks : [example/simulations/consumer_1.rb](https://github.com/solehudinmq/pistonqueue/blob/development/example/simulations/consumer_1.rb).
-- consumer for medium i/o bound tasks : [example/simulations/consumer_2.rb](https://github.com/solehudinmq/pistonqueue/blob/development/example/simulations/consumer_2.rb).
-- consumer for heavy i/o bound tasks : [example/simulations/consumer_3.rb](https://github.com/solehudinmq/pistonqueue/blob/development/example/simulations/consumer_3.rb).
-- consumer for cpu bound tasks : [example/simulations/consumer_4.rb](https://github.com/solehudinmq/pistonqueue/blob/development/example/simulations/consumer_4.rb).
-- consumer for retry performed outside the main consumer : [example/simulations/consumer_retry.rb](https://github.com/solehudinmq/pistonqueue/blob/development/example/simulations/consumer_retry.rb).
+- consumer for light i/o bound tasks : [example/simulations/consumer_1.rb](./example/simulations/consumer_1.rb).
+- consumer for medium i/o bound tasks : [example/simulations/consumer_2.rb](./example/simulations/consumer_2.rb).
+- consumer for heavy i/o bound tasks : [example/simulations/consumer_3.rb](./example/simulations/consumer_3.rb).
+- consumer for cpu bound tasks : [example/simulations/consumer_4.rb](./example/simulations/consumer_4.rb).
+- consumer for retry performed outside the main consumer : [example/simulations/consumer_retry.rb](./example/simulations/consumer_retry.rb).
 
-How to make 'consumer' run in systemd service : [example/run_consumer_in_systemd.txt](https://github.com/solehudinmq/pistonqueue/blob/development/example/run_consumer_in_systemd.txt).
+How to make 'consumer' run in systemd service : [example/run_consumer_in_systemd.txt](./example/run_consumer_in_systemd.txt).
 
 Note: 
 - if the main process fails, the data will be saved in the topic `<topic-name>_retry`.
@@ -154,7 +154,7 @@ Parameter description :
 }
 ```
 
-For more details, you can see the following example : [example/app.rb](https://github.com/solehudinmq/pistonqueue/blob/development/example/app.rb).
+For more details, you can see the following example : [example/app.rb](./example/app.rb).
 
 ### Dead Letter
 
@@ -180,13 +180,13 @@ Parameter description :
 - consumer : provides a unique identity to each application instance or thread you run, for example : 'consumer_io'.
 
 For more details, you can see the following example : 
-- consumer for dead letter process : [example/simulations/consumer_dead_letter.rb](https://github.com/solehudinmq/pistonqueue/blob/development/example/simulations/consumer_dead_letter.rb).
-- consumer for dead letter archive process : [example/simulations/consumer_dead_letter_archive.rb](https://github.com/solehudinmq/pistonqueue/blob/development/example/simulations/consumer_dead_letter_archive.rb).
+- consumer for dead letter process : [example/simulations/consumer_dead_letter.rb](./example/simulations/consumer_dead_letter.rb).
+- consumer for dead letter archive process : [example/simulations/consumer_dead_letter_archive.rb](./example/simulations/consumer_dead_letter_archive.rb).
 
 Note: if the dead letter process still fails, the data will be saved in the topic `<topic-name>_dlq_archive`.
 
 ### Handle Data Stuck
-In unpredictable situations (e.g., if redis is down), the data can be categorized as stuck. To retrieve and process this data, we can do the following :
+In unpredictable situations (e.g., if consumer crash), the data can be categorized as stuck. To retrieve and process this data, we can do the following :
 
 1. data stuck when the main or retry consumer process is carried out, here's an example :
 
@@ -210,8 +210,8 @@ Parameter description :
 - consumer : provides a unique identity to each application instance or thread you run, for example : 'consumer_io'.
 
 For more details, you can see the following example : 
-- pending data in the main process : [example/simulations/consumer_pending.rb](https://github.com/solehudinmq/pistonqueue/blob/development/example/simulations/consumer_pending.rb).
-- pending data in the retry process : [example/simulations/consumer_pending_retry.rb](https://github.com/solehudinmq/pistonqueue/blob/development/example/simulations/consumer_pending_retry.rb).
+- pending data in the main process : [example/simulations/consumer_pending.rb](./example/simulations/consumer_pending.rb).
+- pending data in the retry process : [example/simulations/consumer_pending_retry.rb](./example/simulations/consumer_pending_retry.rb).
 
 2. data stuck when the consumer dead letter process is carried out, here's an example :
 
@@ -233,19 +233,21 @@ Parameter description :
 - group : grouping multiple workers to work on the same data stream (topic) without competing for messages, for example : 'group_io'.
 - consumer : provides a unique identity to each application instance or thread you run, for example : 'consumer_io'.
 
-For more details, you can see the following example : [example/simulations/consumer_pending_dead_letter.rb](https://github.com/solehudinmq/pistonqueue/blob/development/example/simulations/consumer_pending_dead_letter.rb).
+For more details, you can see the following example : [example/simulations/consumer_pending_dead_letter.rb](./example/simulations/consumer_pending_dead_letter.rb).
+
+How to make 'data stuck consumer' run in systemd service : [example/run_consumer_pending_in_systemd.txt](./example/run_consumer_pending_in_systemd.txt).
 
 ## How to do a Stress Test
 
 Make sure 'consumer' is running in the systemd service, then to send a lot of data to the message broker, you can follow these steps : 
-- normal flow : [example/run_producer.txt](https://github.com/solehudinmq/pistonqueue/blob/development/example/run_producer.txt).
-- flow data stuck : [example/run_producer_pending.txt](https://github.com/solehudinmq/pistonqueue/blob/development/example/run_producer_pending.txt).
+- normal flow : [example/run_producer.txt](./example/run_producer.txt).
+- flow data stuck : [example/run_producer_pending.txt](./example/run_producer_pending.txt).
 
-or if you want to do it on localhost only, here's an example : [example/test_on_localhost.txt](https://github.com/solehudinmq/pistonqueue/blob/development/example/test_on_localhost.txt).
+or if you want to do it on localhost only, here's an example : [example/test_on_localhost.txt](./example/test_on_localhost.txt).
 
 ## Example Implementation in Your Application
 
-For examples of applications that use this gem, you can see them here : [example](https://github.com/solehudinmq/pistonqueue/tree/development/example).
+For examples of applications that use this gem, you can see them here : [example](./example).
 
 ## Contributing
 
