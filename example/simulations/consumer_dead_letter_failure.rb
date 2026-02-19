@@ -5,7 +5,7 @@ require_relative '../config'
 require_relative '../models/dead_letter'
 
 dead_letter = ::Pistonqueue::DlqConsumer.new(driver: :redis_stream)
-dead_letter.perform(topic: 'topic_io_medium_failure', task_type: :io_bound_medium, group: 'group-8', consumer: 'consumer-8') do |original_id, original_data, error, failed_at|
+dead_letter.perform(topic: 'topic_io_medium_failure', task_type: :io_bound_medium, group: 'group-9', consumer: 'consumer-9') do |original_id, original_data, error, failed_at|
   raise "Dead letter process failed."
 end
 

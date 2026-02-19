@@ -139,3 +139,20 @@ run the main application (required) :
   b. cd example
   c. bundle install
   d. curl --location 'http://127.0.0.1:4567/dead_letters?page=1'
+
+8. case of processing the data involved and processing it in the main way : 
+- run consumer 1 : 
+  a. open a new tab terminal
+  b. cd example/simulations
+  c. bundle install
+  d. bundle exec ruby consumer_pending.rb
+- run producer : 
+  a. open a new tab terminal
+  b. cd example/simulations
+  c. bundle install
+  d. bundle exec ruby producer_pending.rb topic_io_medium 5000
+- view data on orders that have been successfully created :
+  a. open a new tab terminal
+  b. cd example
+  c. bundle install
+  d. curl --location 'http://127.0.0.1:4567/orders?page=1'

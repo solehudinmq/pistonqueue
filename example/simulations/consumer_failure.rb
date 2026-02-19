@@ -5,7 +5,7 @@ require_relative '../config'
 require_relative '../models/order'
 
 consumer = ::Pistonqueue::Consumer.new(driver: :redis_stream)
-consumer.perform(topic: 'topic_io_medium_failure', task_type: :io_bound_medium, group: 'group-6', consumer: 'consumer-6') do |data|
+consumer.perform(topic: 'topic_io_medium_failure', task_type: :io_bound_medium, group: 'group-5', consumer: 'consumer-5') do |data|
   payload = data['payload'] # nil
   order = Order.new(order_id: payload["order_id"], total_payment: payload['total_payment']) # error
   order.save

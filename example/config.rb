@@ -18,4 +18,5 @@ Dotenv.load(root_path.join('.env'))
   config.maxlen = ENV['MAXLEN']
   config.connection_pool_size = ENV['CONNECTION_POOL_SIZE']
   config.connection_timeout = ENV['CONNECTION_TIMEOUT']
+  config.redis_min_idle_time = ENV['REDIS_MIN_IDLE_TIME']
 end
