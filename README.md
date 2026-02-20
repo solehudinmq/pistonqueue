@@ -242,7 +242,7 @@ How to make 'data stuck consumer' run in systemd service : [example/run_consumer
 
 Make sure 'consumer' is running in the systemd service, then to send a lot of data to the message broker, you can follow these steps : 
 - normal flow : [example/run_producer.txt](./example/run_producer.txt).
-- flow data stuck : [example/run_producer_pending.txt](./example/run_producer_pending.txt).
+- pending flow : [example/run_producer_pending.txt](./example/run_producer_pending.txt).
 
 or if you want to do it on localhost only, here's an example : [example/test_on_localhost.txt](./example/test_on_localhost.txt).
 
