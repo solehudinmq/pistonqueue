@@ -9,13 +9,19 @@ puts "🚀 Starting Pending Producer Simulation..."
 
 topic = ARGV[0]
 total_loop = ARGV[1]
+group_number = ARGV[2]
 
-if topic && total_loop
+if topic && total_loop && group_number
   start_time = Time.now
   n_loop = total_loop.to_i
   
-  group = "group-11"
-  consumer = "consumer-11"
+  group = "group-#{group_number}"
+  consumer = "consumer-#{group_number}"
+
+  is_dead_letter = false
+  if topic.include?('dlq')
+    is_dead_letter = true
+  end
 
   Async do |task|
     redis_pool = ConnectionPool.new(size: 10, timeout: 2000) do
@@ -64,7 +70,19 @@ if topic && total_loop
     n_loop.times do |i|
       semaphore.async do
         request_body = { order_id: "ORD-#{i}", total_payment: rand(10000..500000) }
-        producer.perform(topic: topic, data: request_body)
+
+        payload = if is_dead_letter
+          {
+            original_id: "#{i}",
+            original_data: request_body.to_json,
+            error: 'Error dead letter',
+            failed_at: Time.now.to_s
+          }
+        else
+          request_body
+        end
+
+        producer.perform(topic: topic, data: payload)
       end
     end
 
@@ -89,9 +107,10 @@ end
 # - open a new tab
 # - cd example/simulations
 # - bundle install
-# - bundle exec ruby producer_pending.rb <topic-name> <total-data>
+# - bundle exec ruby producer_pending.rb <topic-name> <total-data> <group-number>
 #   a. parameter description :     
 #     1. topic-name : name of the topic to which data will be sent, for example : topic_io_light / topic_io_medium / topic_io_heavy / topic_cpu.
 #     2. total-data : amount of looping data, for example : 5000.
+#     3. group-number : number of group, for example : 12.
 #   b. how to use : 
-#     1. bundle exec ruby producer_pending.rb topic_io_medium 5000
+#     1. bundle exec ruby producer_pending.rb topic_io_medium 5000 12

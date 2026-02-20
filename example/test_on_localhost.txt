@@ -150,7 +150,7 @@ run the main application (required) :
   a. open a new tab terminal
   b. cd example/simulations
   c. bundle install
-  d. bundle exec ruby producer_pending.rb topic_io_medium 5000
+  d. bundle exec ruby producer_pending.rb topic_io_medium 5000 11
 - view data on orders that have been successfully created :
   a. open a new tab terminal
   b. cd example
@@ -167,7 +167,7 @@ run the main application (required) :
   a. open a new tab terminal
   b. cd example/simulations
   c. bundle install
-  d. bundle exec ruby producer_pending.rb topic_io_medium_retry 5000
+  d. bundle exec ruby producer_pending.rb topic_io_medium_retry 5000 12
 - view data on orders that have been successfully created :
   a. open a new tab terminal
   b. cd example
@@ -184,7 +184,7 @@ run the main application (required) :
   a. open a new tab terminal
   b. cd example/simulations
   c. bundle install
-  d. bundle exec ruby producer_pending.rb topic_io_medium_dlq 5000
+  d. bundle exec ruby producer_pending.rb topic_io_medium_dlq 5000 13
 - view data on orders that have been successfully created :
   a. open a new tab terminal
   b. cd example
