@@ -29,6 +29,8 @@ Requires dependencies to the following gems :
 
 - connection_pool
 
+- logger
+
 ## Installation
 
 Add this line to your application's Gemfile :

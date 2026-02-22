@@ -4,6 +4,7 @@ PATH
     pistonqueue (0.1.0)
       async (~> 2.14)
       connection_pool (~> 2.2)
+      logger
       redis (~> 5.0)
 
 GEM

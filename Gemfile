@@ -8,6 +8,7 @@ gemspec
 gem "async"
 gem "redis"
 gem "connection_pool"
+gem "logger"
 
 group :development, :test do
   gem "byebug"

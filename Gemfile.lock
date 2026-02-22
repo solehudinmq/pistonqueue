@@ -4,6 +4,7 @@ PATH
     pistonqueue (0.1.0)
       async (~> 2.14)
       connection_pool (~> 2.2)
+      logger
       redis (~> 5.0)
 
 GEM
@@ -42,6 +43,7 @@ GEM
     json (2.13.2)
     language_server-protocol (3.17.0.5)
     lint_roller (1.1.0)
+    logger (1.7.0)
     metrics (0.15.0)
     parallel (1.27.0)
     parser (3.3.9.0)
@@ -115,6 +117,7 @@ DEPENDENCIES
   byebug
   connection_pool
   irb
+  logger
   pistonqueue!
   rake
   redis

@@ -37,6 +37,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency "async", "~> 2.14"
   spec.add_dependency "redis", "~> 5.0"
   spec.add_dependency "connection_pool", "~> 2.2"
+  spec.add_dependency "logger"
 
   # For more information and examples about making a new gem, check out our
   # guide at: https://bundler.io/guides/creating_gem.html

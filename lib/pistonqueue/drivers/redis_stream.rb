@@ -2,6 +2,7 @@ require 'redis'
 require 'connection_pool'
 require 'async'
 require 'async/semaphore'
+require 'json'
 
 require_relative '../base/abstract_driver'
 require_relative '../utils/logging'
